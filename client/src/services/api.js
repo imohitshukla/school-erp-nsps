@@ -1,7 +1,6 @@
 // Centralised API helper — reads base URL from .env (VITE_API_URL)
-// so we never hardcode localhost:5001 in any component.
-
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+// Falls back to Render production URL if not set
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://school-erp-nsps.onrender.com';
 
 const getAuthHeaders = () => ({
   'Content-Type': 'application/json',
