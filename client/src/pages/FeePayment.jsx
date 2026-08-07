@@ -26,45 +26,19 @@ const FeePayment = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
-  // Editable fee structure fields
-  const [grossPayable, setGrossPayable] = useState(0);
-  const [editConcession, setEditConcession] = useState(0);
-  const [pastPayments, setPastPayments] = useState(0);
-
-  // When a student is selected, prefill from DB values
-  useEffect(() => {
-    if (activeStudent) {
-      const tuition = parseFloat(activeStudent.payable_fee || 0);
-      const transport = parseFloat(activeStudent.transport_fee || 0);
-      setGrossPayable(tuition + transport);
-      setEditConcession(parseFloat(activeStudent.concession || 0));
-      setPastPayments(parseFloat(activeStudent.paid_past || 0));
-    } else {
-      setGrossPayable(0);
-      setEditConcession(0);
-      setPastPayments(0);
-    }
-  }, [activeStudent]);
-
-  // Computed values from editable fields
-  const netPayable = grossPayable - editConcession;
-  const currentDue = netPayable - pastPayments;
-
-  // Dynamic due based on typed paid amount
+  // Dynamic Fee Structure Data based on imported DB values
+  const tuitionFee = activeStudent ? parseFloat(activeStudent.payable_fee || 0) : 0;
+  const transportFee = activeStudent ? parseFloat(activeStudent.transport_fee || 0) : 0;
+  const concession = activeStudent ? parseFloat(activeStudent.concession || 0) : 0;
+  const paidPast = activeStudent ? parseFloat(activeStudent.paid_past || 0) : 0;
+  
+  // Computed values
+  const totalPayable = (tuitionFee + transportFee) - concession;
+  const currentDue = totalPayable - paidPast;
+  
+  // Dynamic due based on typed amount
   const parsedPaidAmount = parseFloat(paidAmount) || 0;
   const remainingDue = currentDue - parsedPaidAmount;
-
-  // helpers for number inputs
-  const numInput = (val, setter) => (
-    <input
-      type="number"
-      min="0"
-      className="w-24 border border-blue-300 rounded px-2 py-0.5 text-right text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold"
-      value={val}
-      onChange={e => setter(parseFloat(e.target.value) || 0)}
-    />
-  );
-
 
   // Fetch classes on mount
   useEffect(() => {
@@ -276,36 +250,26 @@ const FeePayment = () => {
                       <td className="py-2 px-3 text-gray-400">-</td>
                     </tr>
                     
-                    {/* Summary calculations - all editable */}
+                    {/* Summary calculations */}
                     <tr className="bg-gray-50">
                       <td colSpan="3" className="py-2 px-3 text-right font-bold text-gray-700">Gross Payable</td>
-                      <td className="py-2 px-3 font-bold bg-gray-100">
-                        {numInput(grossPayable, setGrossPayable)}
-                      </td>
+                      <td className="py-2 px-3 font-bold bg-gray-100">₹{tuitionFee + transportFee}</td>
                     </tr>
                     <tr className="bg-gray-50 border-t border-gray-200">
                       <td colSpan="3" className="py-2 px-3 text-right font-bold text-gray-700">Concession</td>
-                      <td className="py-2 px-3 font-bold bg-gray-100">
-                        {numInput(editConcession, setEditConcession)}
-                      </td>
+                      <td className="py-2 px-3 font-bold bg-gray-100">₹{concession}</td>
                     </tr>
                     <tr className="bg-gray-50 border-t border-gray-200">
                       <td colSpan="3" className="py-2 px-3 text-right font-bold text-gray-700">Net Payable</td>
-                      <td className="py-2 px-3 font-bold bg-blue-50 text-blue-700 text-right">
-                        ₹{netPayable}
-                      </td>
+                      <td className="py-2 px-3 font-bold bg-gray-100">₹{totalPayable}</td>
                     </tr>
                     <tr className="bg-gray-50 border-t border-gray-200">
                       <td colSpan="3" className="py-2 px-3 text-right font-bold text-gray-700 text-green-600">Past Payments</td>
-                      <td className="py-2 px-3 font-bold bg-gray-100 text-green-600">
-                        {numInput(pastPayments, setPastPayments)}
-                      </td>
+                      <td className="py-2 px-3 font-bold bg-gray-100 text-green-600">₹{paidPast}</td>
                     </tr>
                     <tr className="bg-gray-50 border-t border-gray-200">
                       <td colSpan="3" className="py-2 px-3 text-right font-bold text-gray-700 text-red-600">Current Due</td>
-                      <td className="py-2 px-3 font-bold bg-red-50 text-red-600 text-right">
-                        ₹{currentDue}
-                      </td>
+                      <td className="py-2 px-3 font-bold bg-gray-100 text-red-600">₹{currentDue}</td>
                     </tr>
                     
                     {/* Payment Input Row */}
