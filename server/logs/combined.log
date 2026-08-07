@@ -1,0 +1,729 @@
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T12:35:57.044Z"}
+{"level":"info","message":"POST /api/fees/collect","timestamp":"2026-08-06T12:36:52.674Z"}
+{"code":"28000","file":"miscinit.c","length":97,"level":"error","line":"755","message":"Error collecting fee: role \"admin\" does not exist","name":"error","routine":"InitializeSessionUserId","severity":"FATAL","stack":"error: role \"admin\" does not exist\n    at /Users/mohitshukla/school managment software/server/node_modules/pg-pool/index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async exports.collectFee (/Users/mohitshukla/school managment software/server/src/controllers/feeController.js:14:23)","timestamp":"2026-08-06T12:36:52.725Z"}
+{"level":"info","message":"POST /api/fees/collect","timestamp":"2026-08-06T12:37:50.874Z"}
+{"code":"28000","file":"miscinit.c","length":97,"level":"error","line":"755","message":"Error collecting fee: role \"admin\" does not exist","name":"error","routine":"InitializeSessionUserId","severity":"FATAL","stack":"error: role \"admin\" does not exist\n    at /Users/mohitshukla/school managment software/server/node_modules/pg-pool/index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async exports.collectFee (/Users/mohitshukla/school managment software/server/src/controllers/feeController.js:14:23)","timestamp":"2026-08-06T12:37:50.893Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T12:38:13.180Z"}
+{"level":"info","message":"POST /api/fees/collect","timestamp":"2026-08-06T12:38:30.185Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T12:38:30.240Z"}
+{"code":"22P02","file":"uuid.c","length":133,"level":"error","line":"133","message":"Error collecting fee: invalid input syntax for type uuid: \"1\"","name":"error","routine":"string_to_uuid","severity":"ERROR","stack":"error: invalid input syntax for type uuid: \"1\"\n    at /Users/mohitshukla/school managment software/server/node_modules/pg-pool/index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async exports.collectFee (/Users/mohitshukla/school managment software/server/src/controllers/feeController.js:14:23)","timestamp":"2026-08-06T12:38:30.276Z","where":"unnamed portal parameter $1 = '...'"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T12:39:29.783Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T12:39:44.353Z"}
+{"level":"info","message":"POST /api/fees/collect","timestamp":"2026-08-06T12:39:55.679Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T12:39:55.751Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:40:05.123Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:41:41.541Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T12:41:41.596Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:41:41.614Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:05.811Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T12:42:05.839Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:05.847Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:37.679Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T12:42:37.713Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:37.720Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.043Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.049Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.184Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.190Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.361Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.366Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.534Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.542Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.722Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.730Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.928Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:39.932Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:41.388Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:42:41.392Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:43:34.457Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T12:43:34.522Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:43:34.572Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:43:59.418Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T12:43:59.476Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T12:43:59.481Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T13:04:53.153Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T13:04:53.204Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T13:04:53.212Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T13:32:40.595Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T13:32:40.651Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T13:32:40.671Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T14:06:40.993Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T14:06:41.038Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T14:06:41.045Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T14:09:20.625Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T14:09:20.667Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T14:09:20.678Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T14:51:53.739Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T14:51:53.784Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T14:51:53.798Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T15:04:53.613Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T15:06:30.737Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T15:06:34.196Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T15:06:46.761Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T15:07:02.015Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T15:07:21.219Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-06T15:07:36.298Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-06T15:12:40.070Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-06T15:13:19.697Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T15:14:00.472Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T15:14:00.554Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T15:14:00.584Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T15:30:42.510Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-06T15:31:19.207Z"}
+{"level":"info","message":"GET /api/students/class/LKG%20A","timestamp":"2026-08-06T15:31:19.229Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T15:31:19.277Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T15:32:39.004Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T15:32:39.063Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T15:32:39.104Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T15:32:55.714Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T15:32:55.757Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T15:32:55.771Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T15:34:44.137Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T15:34:44.166Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T15:34:44.179Z"}
+{"level":"info","message":"GET /api/students/class/1st%20A","timestamp":"2026-08-06T15:38:31.094Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T15:38:31.153Z"}
+{"level":"info","message":"POST /api/fees/collect","timestamp":"2026-08-06T15:38:52.299Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T15:38:52.358Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T15:38:57.927Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T15:38:57.943Z"}
+{"level":"info","message":"GET /api/students/class/1st%20A","timestamp":"2026-08-06T15:39:35.606Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T15:39:35.632Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T16:48:46.739Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T16:50:17.009Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T16:50:50.206Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T16:52:16.628Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T16:52:16.720Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T16:52:17.178Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T16:52:17.184Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T17:19:31.693Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T17:19:31.771Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T17:19:31.800Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T17:20:13.508Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T17:20:13.569Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T17:20:13.581Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T17:20:37.372Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T17:20:37.422Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T17:20:37.438Z"}
+{"level":"info","message":"GET /api/students/class/LKG%20A","timestamp":"2026-08-06T17:20:58.743Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T17:20:58.778Z"}
+{"level":"info","message":"GET /health","timestamp":"2026-08-06T17:27:23.698Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-06T17:27:54.047Z"}
+{"level":"info","message":"GET /api/students/adm/A001","timestamp":"2026-08-06T17:27:54.076Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T17:27:54.111Z"}
+{"level":"info","message":"GET /api/students/class/LKG%20A","timestamp":"2026-08-06T17:27:54.132Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T17:27:54.152Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T17:27:54.171Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T17:28:57.473Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T17:29:10.967Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T17:32:59.222Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T17:37:14.661Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T17:37:14.732Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T17:37:14.753Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T17:39:12.745Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-06T17:39:33.788Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T17:39:33.810Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T17:39:33.851Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T17:42:52.596Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T17:42:52.643Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T17:42:52.650Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T17:42:54.635Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T17:42:54.669Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T17:43:03.489Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T17:43:03.495Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T17:43:03.517Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T17:43:03.518Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T17:43:03.525Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T17:43:08.304Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T17:43:08.319Z"}
+{"level":"info","message":"GET /api/students/class/3rd%20A","timestamp":"2026-08-06T17:43:15.342Z"}
+{"level":"info","message":"POST /api/fees/collect","timestamp":"2026-08-06T17:43:38.179Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T17:43:38.219Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:04:27.107Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:04:27.107Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:14:25.425Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:14:25.425Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T18:14:44.679Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:14:44.742Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T18:14:44.793Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:15:38.576Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:15:38.576Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:16:12.900Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-06T18:18:42.119Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T18:18:42.167Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:18:42.250Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-06T18:19:37.452Z"}
+{"level":"info","message":"GET /api/students/adm/611Ns","timestamp":"2026-08-06T18:19:37.487Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:19:37.533Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-06T18:19:53.187Z"}
+{"level":"info","message":"POST /api/fees/collect","timestamp":"2026-08-06T18:19:53.226Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:19:53.277Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:36:21.071Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:36:21.148Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:36:21.176Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T18:38:36.194Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:38:55.020Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:38:55.105Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T18:39:00.572Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:39:01.870Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:39:54.350Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:39:54.350Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T18:41:16.296Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:41:17.933Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:41:17.984Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:41:19.907Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:41:19.926Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T18:41:24.026Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:43:33.088Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:43:33.088Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:45:59.329Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:45:59.393Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:46:01.138Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:46:01.156Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T18:46:08.162Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:46:11.107Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T18:46:40.928Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:46:55.565Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:46:55.662Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:46:55.747Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:46:55.759Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T18:47:02.260Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:47:03.709Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:47:33.184Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T18:47:33.184Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:48:00.244Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:48:00.282Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:48:00.305Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T18:48:13.567Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:48:13.647Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:48:19.339Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T18:50:50.557Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T18:50:50.598Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:50:50.635Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:50:50.635Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T18:50:50.646Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T18:50:50.650Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-06","timestamp":"2026-08-06T18:51:21.951Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:51:21.999Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-06","timestamp":"2026-08-06T18:51:24.656Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T18:51:44.404Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:51:44.434Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:54:08.067Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:54:08.122Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:54:08.140Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:57:12.666Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T18:57:12.719Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:57:12.731Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:57:15.661Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:57:15.677Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:57:17.793Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T18:57:17.816Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T19:00:36.671Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:00:36.717Z"}
+{"level":"info","message":"GET /api/students/stats","timestamp":"2026-08-06T19:00:36.730Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:00:36.736Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:00:36.738Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:01:31.662Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:01:31.708Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:02:04.015Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:02:04.015Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:02:48.476Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:02:48.476Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:03:21.669Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:03:21.772Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:04:30.491Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:04:30.526Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:04:30.546Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2025-2026","timestamp":"2026-08-06T19:04:35.736Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:04:39.690Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T19:06:00.389Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:06:00.489Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:06:11.367Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:06:11.428Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:06:36.614Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:06:36.620Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:06:36.657Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:06:36.657Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:06:36.666Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:06:36.683Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:06:42.645Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-07-06&endDate=2026-08-06","timestamp":"2026-08-06T19:07:02.088Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:07:02.125Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-06-06&endDate=2026-08-06","timestamp":"2026-08-06T19:07:02.528Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-05-06&endDate=2026-08-06","timestamp":"2026-08-06T19:07:03.229Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-04-06&endDate=2026-08-06","timestamp":"2026-08-06T19:07:03.646Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-03-06&endDate=2026-08-06","timestamp":"2026-08-06T19:07:04.212Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-02-06&endDate=2026-08-06","timestamp":"2026-08-06T19:07:04.911Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-01-06&endDate=2026-08-06","timestamp":"2026-08-06T19:07:05.633Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-01-01&endDate=2026-08-06","timestamp":"2026-08-06T19:07:08.016Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-01-01&endDate=2026-08-06","timestamp":"2026-08-06T19:07:10.425Z"}
+{"level":"info","message":"GET /api/fees/daily-collection","timestamp":"2026-08-06T19:10:57.064Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:11:57.058Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:11:57.080Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:11:57.119Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:11:57.120Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:11:57.128Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:11:57.132Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:12:07.967Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:12:08.011Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:15:20.956Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:15:20.956Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:22:10.265Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:22:10.289Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:22:10.339Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:22:10.340Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:22:10.358Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:22:10.359Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:22:10.360Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:22:10.362Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:22:10.363Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:22:10.365Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:24:43.736Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:24:43.770Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:24:43.819Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:24:43.820Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:24:43.837Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:24:43.838Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:24:52.025Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:24:52.071Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T19:25:03.072Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:25:03.163Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:25:06.755Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:25:13.903Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:25:13.908Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:25:13.925Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:25:13.954Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:25:13.964Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:25:17.766Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:25:19.269Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:25:19.483Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-06","timestamp":"2026-08-06T19:25:31.876Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:25:31.905Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-03&endDate=2026-08-06","timestamp":"2026-08-06T19:25:35.194Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-03&endDate=2026-08-06","timestamp":"2026-08-06T19:25:37.683Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-03&endDate=2026-08-06","timestamp":"2026-08-06T19:25:38.399Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-03&endDate=2026-08-06","timestamp":"2026-08-06T19:25:38.650Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:25:52.344Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:25:52.378Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:25:52.391Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:26:20.542Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:26:20.549Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:26:20.588Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:26:20.589Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:26:20.597Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:26:20.608Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:26:26.535Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:29:50.886Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:29:50.886Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:31:57.686Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:31:57.781Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:31:57.792Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T19:32:06.698Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-06T19:32:08.595Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:32:13.334Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:32:13.336Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:32:13.351Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:32:13.383Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:32:13.404Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:32:18.633Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:32:19.921Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:32:20.115Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:32:20.329Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:32:20.730Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:32:20.914Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-06T19:38:31.727Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-06T19:39:45.849Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:48:13.449Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:48:13.465Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:48:13.518Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:48:13.519Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:48:13.539Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:48:13.540Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:48:13.543Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:48:13.545Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:48:13.547Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:48:13.549Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:55:58.781Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:55:58.781Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:56:55.454Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-06T19:56:55.454Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:59:08.924Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:59:08.942Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:59:08.999Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-06T19:59:09.000Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:59:09.019Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:59:09.021Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:59:09.022Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-06T19:59:09.024Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:59:09.031Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-06T19:59:09.034Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T01:29:21.244Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T01:29:21.266Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T01:29:21.322Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T01:29:21.323Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T01:29:21.348Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T01:29:21.359Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T01:29:33.134Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T01:29:33.163Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T01:29:33.174Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T01:29:35.691Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T01:29:35.714Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T01:29:39.444Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T01:29:39.448Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T01:29:39.460Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T01:29:39.492Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T01:29:39.507Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-07","timestamp":"2026-08-07T01:29:43.757Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:29:46.739Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:29:48.434Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:29:49.977Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:29:50.882Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:29:51.298Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:29:54.182Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:29:55.933Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:29:58.099Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:29:59.518Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:00.483Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:01.088Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:01.862Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:02.535Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:23.032Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T01:30:23.087Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:23.833Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:24.069Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:24.284Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:30.980Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:34.005Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:34.955Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T01:30:35.688Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:34:07.715Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:34:07.715Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:34:17.449Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:34:17.466Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:34:31.163Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:34:31.163Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:35:59.720Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:35:59.720Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:40:22.169Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:40:22.169Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:40:59.006Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:40:59.006Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:41:23.309Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:41:23.309Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:43:00.868Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:43:00.868Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:43:52.560Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:43:52.560Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:44:39.577Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T01:44:39.577Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T02:02:15.675Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T02:02:15.742Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T02:02:15.800Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T02:02:15.801Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T02:02:15.828Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T02:02:15.830Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T02:02:16.154Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T02:02:16.156Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T02:02:16.157Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T02:02:16.159Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T02:02:16.180Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T02:02:16.186Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T02:33:45.281Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T02:33:45.308Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T02:33:45.410Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T02:33:45.413Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T02:33:45.440Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T02:33:45.442Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T02:33:45.541Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T02:33:45.544Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T02:33:45.545Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T02:33:45.551Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T02:33:45.566Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T10:12:36.671Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T10:12:36.708Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T10:12:36.717Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T10:12:36.724Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:12:36.806Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:12:36.814Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:12:36.817Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:12:36.850Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:12:41.177Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:12:41.231Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-07T10:12:52.831Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:12:53.115Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:12:56.684Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:13:02.402Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:13:02.407Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:13:02.548Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-07T10:13:11.825Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:13:14.043Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:14:45.594Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:14:45.648Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:15:18.458Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:15:18.458Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:16:57.329Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:16:57.329Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:18:07.239Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:18:07.239Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:18:34.288Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:18:34.288Z"}
+{"level":"info","message":"POST /api/tenant/register","timestamp":"2026-08-07T10:27:12.770Z"}
+{"level":"info","message":"POST /api/tenant/register","timestamp":"2026-08-07T10:27:24.647Z"}
+{"level":"info","message":"POST /api/tenant/register","timestamp":"2026-08-07T10:27:37.737Z"}
+{"level":"info","message":"POST /api/tenant/register","timestamp":"2026-08-07T10:28:45.889Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:29:49.546Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:29:49.546Z"}
+{"level":"info","message":"POST /api/tenant/register","timestamp":"2026-08-07T10:30:04.868Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:30:04.944Z"}
+{"level":"info","message":"POST /api/tenant/register","timestamp":"2026-08-07T10:31:12.846Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:31:12.869Z"}
+{"level":"info","message":"POST /api/tenant/register","timestamp":"2026-08-07T10:31:51.367Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:31:51.403Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:32:11.957Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:32:12.006Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:32:14.218Z"}
+{"level":"info","message":"POST /api/tenant/register","timestamp":"2026-08-07T10:32:38.064Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:32:38.093Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:33:22.044Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:33:22.102Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:33:56.522Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:33:56.574Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:34:10.223Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:34:10.271Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:34:11.391Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:34:12.155Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:34:12.370Z"}
+{"level":"info","message":"POST /api/tenant/register","timestamp":"2026-08-07T10:34:58.236Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:34:58.275Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:35:09.819Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:35:09.858Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:35:10.008Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:35:10.034Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-07T10:35:18.589Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:35:20.619Z"}
+{"level":"info","message":"POST /api/fees/import","timestamp":"2026-08-07T10:35:25.811Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T10:35:30.886Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T10:35:30.891Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T10:35:30.910Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:35:30.924Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T10:35:30.993Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:43:43.787Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:43:43.787Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:44:16.833Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:44:16.833Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:44:46.554Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:44:46.554Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:45:27.620Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T10:45:27.620Z"}
+{"level":"info","message":"POST /api/tenant/login","timestamp":"2026-08-07T10:46:01.965Z"}
+{"level":"info","message":"POST /api/auth/login","timestamp":"2026-08-07T10:57:27.306Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:57:27.403Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:57:27.571Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:57:27.637Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T10:57:36.089Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T10:57:36.096Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T10:57:36.104Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:57:36.121Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T10:57:36.153Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-07","timestamp":"2026-08-07T10:57:42.977Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:58:39.434Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T10:58:39.514Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T10:58:39.529Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:02:34.102Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:02:34.150Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:02:34.162Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-07T11:02:46.591Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:02:46.705Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:02:49.031Z"}
+{"level":"info","message":"POST /api/fees/import","timestamp":"2026-08-07T11:02:54.271Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:02:59.098Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:02:59.099Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:02:59.115Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:02:59.134Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:02:59.151Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-07","timestamp":"2026-08-07T11:03:08.589Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T11:03:14.180Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:03:17.812Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:03:17.816Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:03:17.847Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:03:17.891Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:03:17.905Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-07","timestamp":"2026-08-07T11:03:21.347Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T11:03:23.771Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T11:03:25.355Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T11:05:02.753Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T11:05:02.753Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T11:07:04.127Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:07:55.868Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:07:55.890Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:07:55.924Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:07:55.927Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:07:55.944Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:07:55.958Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:07:58.850Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:08:05.383Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:08:05.407Z"}
+{"level":"info","message":"POST /api/fees/import","timestamp":"2026-08-07T11:08:10.430Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:08:15.263Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:08:15.266Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:08:15.280Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:08:15.296Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:08:15.321Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:08:18.437Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:09:13.513Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:09:13.526Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:09:13.566Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:09:13.567Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:09:13.579Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:09:13.584Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:09:16.307Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:09:16.336Z"}
+{"level":"info","message":"POST /api/fees/import","timestamp":"2026-08-07T11:09:20.908Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-07T11:09:30.681Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:09:32.979Z"}
+{"level":"info","message":"POST /api/fees/import","timestamp":"2026-08-07T11:09:37.682Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:09:43.142Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:09:43.144Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:09:43.161Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:09:43.175Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:09:43.192Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-07","timestamp":"2026-08-07T11:09:47.438Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T11:09:50.578Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T11:09:51.888Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T11:09:52.939Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T11:09:53.221Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-06","timestamp":"2026-08-07T11:09:57.281Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:01.833Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:02.974Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-07-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:16.699Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:10:16.771Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-06-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:17.003Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-05-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:17.443Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-04-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:18.035Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-03-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:18.819Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-02-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:19.911Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-01-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:22.137Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-02-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:22.885Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-03-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:23.483Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-04-01&endDate=2026-08-05","timestamp":"2026-08-07T11:10:24.373Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-04-01&endDate=2026-07-05","timestamp":"2026-08-07T11:10:32.842Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-04-01&endDate=2026-06-05","timestamp":"2026-08-07T11:10:33.204Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-04-01&endDate=2026-05-05","timestamp":"2026-08-07T11:10:33.936Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-04-01&endDate=2026-04-05","timestamp":"2026-08-07T11:10:34.579Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-04-01&endDate=2026-04-30","timestamp":"2026-08-07T11:10:39.749Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-04-01&endDate=2026-04-30","timestamp":"2026-08-07T11:10:42.322Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-04-30","timestamp":"2026-08-07T11:13:21.597Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:13:21.661Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-05-30","timestamp":"2026-08-07T11:13:28.714Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-06-30","timestamp":"2026-08-07T11:13:28.922Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-07-30","timestamp":"2026-08-07T11:13:29.123Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-30","timestamp":"2026-08-07T11:13:29.591Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-01","timestamp":"2026-08-07T11:13:31.393Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-01","timestamp":"2026-08-07T11:13:34.963Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-02&endDate=2026-08-01","timestamp":"2026-08-07T11:14:31.371Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:14:31.433Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-02&endDate=2026-08-03","timestamp":"2026-08-07T11:14:35.226Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-03","timestamp":"2026-08-07T11:14:43.038Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-03","timestamp":"2026-08-07T11:14:46.892Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T11:26:46.925Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T11:26:46.924Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T11:26:46.924Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:30:41.923Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:30:42.009Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:30:42.032Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:41:34.154Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:41:34.214Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:41:34.261Z"}
+{"level":"info","message":"POST /api/fees/import-csv","timestamp":"2026-08-07T11:46:00.294Z"}
+{"level":"info","message":"POST /api/fees/import-csv","timestamp":"2026-08-07T11:46:27.684Z"}
+{"level":"info","message":"POST /api/fees/import","timestamp":"2026-08-07T11:46:50.497Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:46:50.567Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:48:51.739Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:48:51.778Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:48:51.807Z"}
+{"level":"info","message":"POST /api/fees/import","timestamp":"2026-08-07T11:48:59.802Z"}
+{"level":"info","message":"POST /api/students/import","timestamp":"2026-08-07T11:49:08.216Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T11:49:10.358Z"}
+{"level":"info","message":"POST /api/fees/import","timestamp":"2026-08-07T11:49:15.928Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:54:37.947Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:54:37.992Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:54:38.031Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:54:38.036Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:54:38.052Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T11:54:38.060Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-07","timestamp":"2026-08-07T11:54:41.775Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T11:54:44.873Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T11:54:45.814Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-06","timestamp":"2026-08-07T11:55:48.333Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:55:48.389Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-01","timestamp":"2026-08-07T11:55:50.884Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-01&endDate=2026-08-01","timestamp":"2026-08-07T11:55:51.919Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:56:42.906Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:56:42.962Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T11:56:42.966Z"}
+{"level":"info","message":"GET /api/students/class/9th%20EM%20B","timestamp":"2026-08-07T11:57:30.321Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:57:30.393Z"}
+{"level":"info","message":"GET /api/students/class/UKG%20A","timestamp":"2026-08-07T11:58:38.914Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T11:58:38.976Z"}
+{"level":"info","message":"POST /api/fees/collect","timestamp":"2026-08-07T12:01:10.828Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:01:10.884Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:01:27.810Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:01:27.816Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:01:27.878Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:01:27.879Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:01:27.888Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:01:27.896Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T12:02:50.344Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:02:50.436Z"}
+{"level":"info","message":"GET /api/students/stats?academicYear=2026-2027","timestamp":"2026-08-07T12:02:50.455Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:11:01.394Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:11:01.455Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:11:01.499Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:11:01.502Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:11:01.521Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:11:01.530Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T12:13:28.405Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T12:13:28.405Z"}
+{"level":"info","message":"Server running on port 5001","timestamp":"2026-08-07T12:13:28.405Z"}
+{"level":"info","message":"GET /api/fees/dashboard-stats","timestamp":"2026-08-07T12:18:29.991Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:18:30.113Z"}
+{"level":"info","message":"GET /api/fees/dashboard-stats","timestamp":"2026-08-07T12:18:30.174Z"}
+{"level":"info","message":"GET /api/fees/dashboard-stats","timestamp":"2026-08-07T12:18:33.771Z"}
+{"level":"info","message":"GET /api/fees/dashboard-stats","timestamp":"2026-08-07T12:18:33.838Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:19:24.917Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:19:24.953Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:19:24.994Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:19:25.006Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:19:25.023Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:19:25.030Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:23:05.171Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:23:05.189Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:23:05.236Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:23:05.237Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:23:05.254Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:23:05.256Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:23:32.148Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:23:32.162Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:23:32.192Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:23:32.192Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:23:32.197Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:23:32.206Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:25:38.437Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:25:38.452Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:25:38.479Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:25:38.479Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:25:38.489Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:25:38.490Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:28:11.670Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:28:11.689Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:28:11.731Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:28:11.731Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:28:11.740Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:28:11.751Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-07","timestamp":"2026-08-07T12:28:17.080Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-06&endDate=2026-08-06","timestamp":"2026-08-07T12:28:20.770Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:33:22.645Z"}
+{"level":"info","message":"Connected to the PostgreSQL database.","timestamp":"2026-08-07T12:33:22.710Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:33:23.242Z"}
+{"level":"info","message":"GET /api/fees/daily-collection?startDate=2026-08-07&endDate=2026-08-07","timestamp":"2026-08-07T12:33:23.995Z"}
+{"level":"info","message":"GET /api/students/classes","timestamp":"2026-08-07T12:33:26.213Z"}

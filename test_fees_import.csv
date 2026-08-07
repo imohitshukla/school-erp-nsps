@@ -1,0 +1,5 @@
+Student Name,Adm No,Class,Rcpt No,Tot Amt,Concession,Pay Amt,Paid,Due,Mode,Note,Date
+Priya Sonkar,332Ns,9th EM B,F.No 3468,6000,0,6000,6000,0,Cash,Imported from CSV,01/08/2026 10:15:00
+Rajveer Singh,476Ns,5th A,F.No 3456,6100,0,6100,6100,0,Cash,Imported from CSV,02/08/2026 11:30:00
+Rishabh Kumar,475Ns,3rd A,F.No 3457,6100,0,6100,6100,0,Cash,Imported from CSV,03/08/2026 14:20:00
+Pranav,637Ns,Nursery A,F.No 3476,12400,7700,4700,4500,200,Cash,Imported from CSV,07/08/2026 08:48:00

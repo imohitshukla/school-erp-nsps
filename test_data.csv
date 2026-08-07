@@ -1,0 +1,4 @@
+Adm.No.,Name,Class,TotalAmount,Paid,Payment Date,Payment Mode,Receipt No
+101,Test Student A,Class 1,15000,5000,06-Aug-2026,Cash,REC-001
+102,Test Student B,Class 1,15000,10000,06-Aug-2026,Card,REC-002
+103,Test Student C,Class 2,20000,20000,07-Aug-2026,UPI,REC-003
