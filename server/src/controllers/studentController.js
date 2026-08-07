@@ -168,3 +168,56 @@ exports.importStudents = async (req, res) => {
       }
     });
 };
+
+/**
+ * GET /api/students/export
+ * Streams all students for this school as a downloadable CSV.
+ */
+exports.exportStudents = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT adm_no, name, class_name, academic_year,
+              payable_fee, transport_fee, paid_past, concession
+       FROM students
+       WHERE school_id = $1
+       ORDER BY class_name, name ASC`,
+      [req.user.school_id]
+    );
+
+    const rows = result.rows;
+    const headers = ['adm_no', 'name', 'class_name', 'academic_year',
+                     'payable_fee', 'transport_fee', 'paid_past', 'concession'];
+
+    const csvLines = [
+      headers.join(','),
+      ...rows.map(r =>
+        headers.map(h => {
+          const val = (r[h] === null || r[h] === undefined) ? '' : String(r[h]);
+          // Escape commas / quotes
+          return val.includes(',') || val.includes('"') ? `"${val.replace(/"/g, '""')}"` : val;
+        }).join(',')
+      )
+    ];
+
+    const csvContent = csvLines.join('\n');
+    const filename = `students_export_${new Date().toISOString().split('T')[0]}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(csvContent);
+  } catch (error) {
+    console.error('Error exporting students:', error);
+    res.status(500).json({ error: 'Internal server error during export' });
+  }
+};
+
+/**
+ * GET /api/students/template
+ * Returns a blank CSV template with the correct headers for student import.
+ */
+exports.downloadStudentTemplate = (req, res) => {
+  const csv = 'adm_no,name,class_name\nB001,John Doe,10th\nB002,Jane Smith,LKG\n';
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="student_import_template.csv"');
+  res.status(200).send(csv);
+};

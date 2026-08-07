@@ -47,6 +47,33 @@ const api = {
     }
     return res.json();
   },
+
+  /**
+   * Fetches a file from an authenticated endpoint and triggers a browser download.
+   * @param {string} path   - API path, e.g. '/api/students/export'
+   * @param {string} filename - Suggested filename for the download
+   */
+  downloadBlob: async (path, filename) => {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        'Bypass-Tunnel-Reminder': 'true',
+      },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || 'Download failed');
+    }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
 };
 
 export default api;

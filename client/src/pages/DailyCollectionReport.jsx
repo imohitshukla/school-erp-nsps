@@ -3,6 +3,7 @@ import { IndianRupee, Printer, FileText, FileSpreadsheet, Search, ChevronDown, C
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 
+
 const DailyCollectionReport = () => {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +78,25 @@ const DailyCollectionReport = () => {
     acc[user] = (acc[user] || 0) + parseFloat(item.pay_amt || 0);
     return acc;
   }, {});
+
+  const [csvExporting, setCsvExporting] = useState(false);
+  const handleCSVExport = async () => {
+    setCsvExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      if (selectedClass && selectedClass !== 'All') params.append('class', selectedClass);
+      if (selectedMode && selectedMode !== 'All') params.append('mode', selectedMode);
+      const today = new Date().toISOString().split('T')[0];
+      await api.downloadBlob(`/api/fees/export/ledger?${params.toString()}`, `fee_collection_${today}.csv`);
+    } catch (err) {
+      alert('CSV export failed: ' + err.message);
+    } finally {
+      setCsvExporting(false);
+    }
+  };
+
   return (
     <div className="max-w-full overflow-x-hidden">
       <div className="print:hidden">
@@ -105,9 +125,17 @@ const DailyCollectionReport = () => {
           <h2 className="text-lg font-bold text-gray-800">Daily Collection Report</h2>
         </div>
         <div className="flex space-x-2">
-          <button className="p-1 border border-green-300 text-green-600 rounded bg-green-50"><FileSpreadsheet size={18} /></button>
+          <button
+            id="export-csv-btn"
+            onClick={handleCSVExport}
+            disabled={csvExporting}
+            title="Export as CSV"
+            className="p-1 border border-green-300 text-green-600 rounded bg-green-50 hover:bg-green-100 transition-colors disabled:opacity-50"
+          >
+            <FileSpreadsheet size={18} />
+          </button>
           <button className="p-1 border border-red-300 text-red-600 rounded bg-red-50"><FileText size={18} /></button>
-          <button className="p-1 border border-green-300 text-green-600 rounded bg-green-50"><Printer size={18} /></button>
+          <button className="p-1 border border-green-300 text-green-600 rounded bg-green-50" onClick={() => window.print()}><Printer size={18} /></button>
         </div>
       </div>
 

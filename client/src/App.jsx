@@ -14,6 +14,7 @@ import Academic from './pages/Academic';
 import Administration from './pages/Administration';
 import Communication from './pages/Communication';
 import SchoolRegistration from './pages/SchoolRegistration';
+import DataManagement from './pages/DataManagement';
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
             <Route path="fees/reports" element={<FeeReports />} />
             <Route path="fees/daily-collection" element={<DailyCollectionReport />} />
             <Route path="fees/payment" element={<FeePayment />} />
+            <Route path="data" element={<DataManagement />} />
             <Route path="*" element={<div className="p-8 text-gray-500">Page under construction</div>} />
           </Route>
         </Routes>

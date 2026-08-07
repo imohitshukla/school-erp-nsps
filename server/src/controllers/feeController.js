@@ -503,3 +503,119 @@ exports.getDefaulterForecasting = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// =============================================================================
+// EXPORT ENDPOINTS
+// =============================================================================
+
+/**
+ * Utility: convert an array of row objects to CSV string
+ */
+function rowsToCSV(rows, headers) {
+  if (!rows || rows.length === 0) return headers.join(',') + '\n';
+  const lines = [headers.join(',')];
+  for (const row of rows) {
+    const cols = headers.map(h => {
+      const val = (row[h] === null || row[h] === undefined) ? '' : String(row[h]);
+      return val.includes(',') || val.includes('"') || val.includes('\n')
+        ? `"${val.replace(/"/g, '""')}"`
+        : val;
+    });
+    lines.push(cols.join(','));
+  }
+  return lines.join('\n');
+}
+
+/**
+ * GET /api/fees/export/ledger?startDate=&endDate=
+ * Exports the fee_ledger as a downloadable CSV.
+ */
+exports.exportFeeLedger = async (req, res) => {
+  const { startDate, endDate, class: classFilter, mode: modeFilter } = req.query;
+  try {
+    let query = `
+      SELECT 
+        l.receipt_no,
+        l.student_id AS adm_no,
+        COALESCE(s.name, 'Unknown') AS student_name,
+        COALESCE(s.class_name, 'N/A') AS class_name,
+        l.amount AS amount,
+        l.payment_mode AS payment_mode,
+        l.collected_by,
+        l.notes,
+        l.created_at AS date_time,
+        l.status
+      FROM fee_ledger l
+      LEFT JOIN students s ON s.adm_no = l.student_id AND s.school_id = l.school_id
+      WHERE l.school_id = $1
+    `;
+    const params = [req.user.school_id];
+
+    if (startDate) { params.push(startDate); query += ` AND l.created_at >= $${params.length}::date`; }
+    if (endDate)   { params.push(endDate);   query += ` AND l.created_at < ($${params.length}::date + INTERVAL '1 day')`; }
+    if (classFilter && classFilter !== 'All') { params.push(classFilter); query += ` AND s.class_name = $${params.length}`; }
+    if (modeFilter  && modeFilter  !== 'All') { params.push(modeFilter);  query += ` AND l.payment_mode = $${params.length}`; }
+
+    query += ' ORDER BY l.created_at DESC';
+
+    const result = await db.query(query, params);
+    const headers = ['receipt_no','adm_no','student_name','class_name','amount','payment_mode','collected_by','notes','date_time','status'];
+    const csv = rowsToCSV(result.rows, headers);
+
+    const filename = `fee_ledger_${new Date().toISOString().split('T')[0]}.csv`;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(csv);
+  } catch (error) {
+    logger.error('Error exporting fee ledger:', error);
+    res.status(500).json({ error: 'Internal server error during export' });
+  }
+};
+
+/**
+ * GET /api/fees/export/defaulters
+ * Exports the defaulters list as a downloadable CSV.
+ */
+exports.exportDefaulters = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT 
+         adm_no, name, class_name,
+         payable_fee   AS total_assigned,
+         paid_past     AS total_paid,
+         concession,
+         (payable_fee - paid_past - concession) AS pending_balance
+       FROM students
+       WHERE school_id = $1 AND (payable_fee - paid_past - concession) > 0
+       ORDER BY pending_balance DESC`,
+      [req.user.school_id]
+    );
+
+    const headers = ['adm_no','name','class_name','total_assigned','total_paid','concession','pending_balance'];
+    const csv = rowsToCSV(result.rows, headers);
+
+    const filename = `defaulters_${new Date().toISOString().split('T')[0]}.csv`;
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(csv);
+  } catch (error) {
+    logger.error('Error exporting defaulters:', error);
+    res.status(500).json({ error: 'Internal server error during export' });
+  }
+};
+
+/**
+ * GET /api/fees/template
+ * Returns a blank CSV template with the correct headers for fee import.
+ */
+exports.downloadFeeTemplate = (req, res) => {
+  const csv = [
+    'adm_no,total_amount,transport_fee,total_paid,concession,payment_mode,payment_date,transaction_id',
+    'B001,25000,3000,10000,500,Cash,01-Apr-2026,',
+    'B002,25000,0,25000,1000,UPI,15-Apr-2026,TXN-98765',
+  ].join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="fee_import_template.csv"');
+  res.status(200).send(csv);
+};

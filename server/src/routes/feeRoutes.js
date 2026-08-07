@@ -22,8 +22,13 @@ router.post('/collect', feeController.collectFee);
 router.get('/daily-collection', feeController.getDailyCollection);
 router.get('/dashboard-stats', feeController.getFeeDashboardStats);
 
-// New import route
+// Import route
 router.post('/import', upload.single('file'), feeController.importFees);
+
+// Export routes
+router.get('/export/ledger', feeController.exportFeeLedger);
+router.get('/export/defaulters', feeController.exportDefaulters);
+router.get('/template', feeController.downloadFeeTemplate);
 
 // --- FEE REPORTING ENGINE ROUTES ---
 router.get('/reports/daily', feeController.getDailyCollectionReport);
