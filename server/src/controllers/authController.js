@@ -36,7 +36,7 @@ exports.login = async (req, res) => {
       user: { id: user.id, username: user.username, role: user.role, school_id: user.school_id }
     });
   } catch (err) {
-    console.error('Login error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('Login error details:', err.message, err.stack);
+    return res.status(500).json({ error: 'Internal server error', detail: err.message });
   }
 };
