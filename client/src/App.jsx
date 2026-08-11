@@ -17,6 +17,7 @@ import Communication from './pages/Communication';
 import SchoolRegistration from './pages/SchoolRegistration';
 import DataManagement from './pages/DataManagement';
 import PlaceholderPage from './pages/PlaceholderPage';
+import Admission from './pages/Admission';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
             <Route path="fees/daily-collection" element={<DailyCollectionReport />} />
             <Route path="fees/payment" element={<FeePayment />} />
             <Route path="data" element={<DataManagement />} />
+            <Route path="admission" element={<Admission />} />
             
             {/* Placeholder routes for incomplete features */}
             <Route path="setup" element={<PlaceholderPage />} />
@@ -52,6 +54,9 @@ function App() {
             <Route path="sms" element={<PlaceholderPage />} />
             <Route path="billing" element={<PlaceholderPage />} />
             <Route path="services" element={<PlaceholderPage />} />
+            <Route path="qr-posters" element={<PlaceholderPage />} />
+            <Route path="post-jobs" element={<PlaceholderPage />} />
+            <Route path="account" element={<PlaceholderPage />} />
             
             <Route path="*" element={<PlaceholderPage />} />
           </Route>

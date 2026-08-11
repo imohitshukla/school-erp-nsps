@@ -123,13 +123,13 @@ const Header = ({ toggleSidebar }) => {
         </div>
 
         <div className="flex space-x-7 shrink-0 ml-auto items-center">
-          <ModuleLink icon={<QrCode size={18} className="text-blue-500" />} label="QR Posters" path="#" active={false} />
-          <ModuleLink icon={<Briefcase size={18} className="text-amber-500" />} label="Post Jobs" path="#" active={false} />
+          <ModuleLink icon={<QrCode size={18} className="text-blue-500" />} label="QR Posters" path="/qr-posters" active={location.pathname === '/qr-posters'} />
+          <ModuleLink icon={<Briefcase size={18} className="text-amber-500" />} label="Post Jobs" path="/post-jobs" active={location.pathname === '/post-jobs'} />
           <ModuleLink icon={<IndianRupee size={18} className="text-emerald-500" />} label="Fee" path="/fees/dashboard" active={location.pathname.includes('/fees')} />
-          <ModuleLink icon={<UserPlus size={18} className="text-rose-500" />} label="Admission" path="#" active={false} />
-          <ModuleLink icon={<FileText size={18} className="text-violet-500" />} label="Account" path="#" active={false} />
+          <ModuleLink icon={<UserPlus size={18} className="text-rose-500" />} label="Admission" path="/admission" active={location.pathname === '/admission'} />
+          <ModuleLink icon={<FileText size={18} className="text-violet-500" />} label="Account" path="/account" active={location.pathname === '/account'} />
           <ModuleLink icon={<Users size={18} className="text-indigo-500" />} label="Student" path="/dashboard" active={location.pathname === '/dashboard'} />
-          <ModuleLink icon={<UserCheck size={18} className="text-orange-500" />} label="Staff" path="#" active={false} />
+          <ModuleLink icon={<UserCheck size={18} className="text-orange-500" />} label="Staff" path="/admin" active={location.pathname === '/admin'} />
         </div>
       </div>
     </div>

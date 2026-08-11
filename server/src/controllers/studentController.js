@@ -75,9 +75,9 @@ exports.getStudentStats = async (req, res) => {
     res.status(200).json({
       data: {
         totalActive: totalStudents,
-        totalOld: Math.floor(totalStudents * 0.4), // Mocked for demo
-        totalMale: Math.floor(totalStudents * 0.6), // Mocked for demo
-        totalFemale: Math.floor(totalStudents * 0.4), // Mocked for demo
+        totalOld: 0,
+        totalMale: 0,
+        totalFemale: 0,
         classStats: classStatsResult.rows
       }
     });
@@ -86,6 +86,58 @@ exports.getStudentStats = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+exports.getStudents = async (req, res) => {
+  try {
+    const { class_name, academic_year } = req.query;
+    let query = 'SELECT id, adm_no, name, class_name, payable_fee, transport_fee, paid_past, concession, academic_year FROM students WHERE school_id = $1';
+    const params = [req.user.school_id];
+
+    if (class_name) {
+      params.push(class_name);
+      query += ` AND class_name = $${params.length}`;
+    }
+    if (academic_year) {
+      params.push(academic_year);
+      query += ` AND academic_year = $${params.length}`;
+    }
+
+    query += ' ORDER BY name ASC';
+    const result = await db.query(query, params);
+    res.status(200).json({ data: result.rows });
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.createStudent = async (req, res) => {
+  const { adm_no, name, class_name, academic_year, payable_fee, transport_fee, concession } = req.body;
+  if (!adm_no || !name || !class_name) {
+    return res.status(400).json({ error: 'adm_no, name, and class_name are required' });
+  }
+  try {
+    const result = await db.query(
+      `INSERT INTO students (adm_no, name, class_name, academic_year, school_id, payable_fee, transport_fee, concession)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (school_id, adm_no, academic_year) DO UPDATE
+       SET name = EXCLUDED.name, class_name = EXCLUDED.class_name,
+           payable_fee = EXCLUDED.payable_fee, transport_fee = EXCLUDED.transport_fee,
+           concession = EXCLUDED.concession
+       RETURNING *`,
+      [adm_no, name, class_name, academic_year || '2026-2027', req.user.school_id,
+       parseFloat(payable_fee || 0), parseFloat(transport_fee || 0), parseFloat(concession || 0)]
+    );
+    res.status(201).json({ message: 'Student admitted successfully', data: result.rows[0] });
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'A student with this Admission Number already exists for this academic year.' });
+    }
+    console.error('Error creating student:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 
 exports.importStudents = async (req, res) => {
   if (!req.file) {

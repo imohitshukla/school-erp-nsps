@@ -9,6 +9,8 @@ const upload = multer({ dest: 'uploads/' });
 
 router.get('/stats', studentController.getStudentStats);
 router.get('/classes', studentController.getClasses);
+router.get('/', studentController.getStudents);
+router.post('/', studentController.createStudent);
 router.post('/import', upload.single('file'), studentController.importStudents);
 router.get('/export', studentController.exportStudents);
 router.get('/template', studentController.downloadStudentTemplate);
