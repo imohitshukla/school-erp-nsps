@@ -16,6 +16,7 @@ import Administration from './pages/Administration';
 import Communication from './pages/Communication';
 import SchoolRegistration from './pages/SchoolRegistration';
 import DataManagement from './pages/DataManagement';
+import PlaceholderPage from './pages/PlaceholderPage';
 
 function App() {
   return (
@@ -41,7 +42,18 @@ function App() {
             <Route path="fees/daily-collection" element={<DailyCollectionReport />} />
             <Route path="fees/payment" element={<FeePayment />} />
             <Route path="data" element={<DataManagement />} />
-            <Route path="*" element={<div className="p-8 text-gray-500">Page under construction</div>} />
+            
+            {/* Placeholder routes for incomplete features */}
+            <Route path="setup" element={<PlaceholderPage />} />
+            <Route path="website" element={<PlaceholderPage />} />
+            <Route path="profile" element={<PlaceholderPage />} />
+            <Route path="staff-support" element={<PlaceholderPage />} />
+            <Route path="student-support" element={<PlaceholderPage />} />
+            <Route path="sms" element={<PlaceholderPage />} />
+            <Route path="billing" element={<PlaceholderPage />} />
+            <Route path="services" element={<PlaceholderPage />} />
+            
+            <Route path="*" element={<PlaceholderPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

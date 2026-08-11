@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
  * Collects a fee payment for a student identified by adm_no.
  */
 exports.collectFee = async (req, res) => {
-  const { student_id, amount, payment_mode, notes, receipt_no: schoolReceiptNo } = req.body;
+  const { student_id, amount, payment_mode, notes, receipt_no: schoolReceiptNo, tuition_amount, transport_amount, month_paid } = req.body;
 
   if (!student_id || !amount || !payment_mode) {
     return res.status(400).json({ error: 'Missing required fields: student_id, amount, payment_mode' });
@@ -30,10 +30,10 @@ exports.collectFee = async (req, res) => {
 
     const ledgerResult = await db.query(
       `INSERT INTO fee_ledger 
-         (receipt_no, student_id, amount, payment_mode, transaction_reference, collected_by, status, notes, school_id) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+         (receipt_no, student_id, amount, payment_mode, transaction_reference, collected_by, status, notes, school_id, tuition_amount, transport_amount, month_paid) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
        RETURNING *`,
-      [receiptNo, student.adm_no, parsedAmount, payment_mode, `TXN-${Date.now()}`, collectedBy, 'Success', notes || '', req.user.school_id]
+      [receiptNo, student.adm_no, parsedAmount, payment_mode, `TXN-${Date.now()}`, collectedBy, 'Success', notes || '', req.user.school_id, parseFloat(tuition_amount || 0), parseFloat(transport_amount || 0), month_paid || null]
     );
 
     // Update the student's paid_past

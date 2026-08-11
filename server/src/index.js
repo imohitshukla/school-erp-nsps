@@ -20,12 +20,16 @@ const feeRoutes = require('./routes/feeRoutes');
 const authRoutes = require('./routes/authRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
 const tenantRoutes = require('./routes/tenantRoutes');
+const communicationRoutes = require('./routes/communicationRoutes');
+const academicRoutes = require('./routes/academicRoutes');
 
 // Mount Routes
 app.use('/api/tenant', tenantRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/students', authMiddleware, studentRoutes);
 app.use('/api/fees', authMiddleware, feeRoutes);
+app.use('/api/communications', authMiddleware, communicationRoutes);
+app.use('/api/academics', authMiddleware, academicRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {

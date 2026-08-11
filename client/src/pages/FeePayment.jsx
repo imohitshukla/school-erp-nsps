@@ -20,7 +20,9 @@ const FeePayment = () => {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [receiptNo, setReceiptNo] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
-  const [paidAmount, setPaidAmount] = useState('');
+  const [tuitionPaid, setTuitionPaid] = useState('');
+  const [transportPaid, setTransportPaid] = useState('');
+  const [monthPaid, setMonthPaid] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -37,7 +39,9 @@ const FeePayment = () => {
   const currentDue = totalPayable - paidPast;
   
   // Dynamic due based on typed amount
-  const parsedPaidAmount = parseFloat(paidAmount) || 0;
+  const parsedTuition = parseFloat(tuitionPaid) || 0;
+  const parsedTransport = parseFloat(transportPaid) || 0;
+  const parsedPaidAmount = parsedTuition + parsedTransport;
   const remainingDue = currentDue - parsedPaidAmount;
 
   // Fetch classes on mount
@@ -112,8 +116,8 @@ const FeePayment = () => {
       setError('Please select a student first.');
       return;
     }
-    if (!paidAmount || parsedPaidAmount <= 0) {
-      setError('Please enter a valid paid amount.');
+    if (parsedPaidAmount <= 0) {
+      setError('Please enter a valid paid amount (Tuition + Transport).');
       return;
     }
 
@@ -125,6 +129,9 @@ const FeePayment = () => {
       const response = await api.post('/api/fees/collect', {
         student_id: activeStudent.adm_no, // using adm_no as identifier for now
         amount: parsedPaidAmount,
+        tuition_amount: parsedTuition,
+        transport_amount: parsedTransport,
+        month_paid: monthPaid,
         payment_mode: paymentMode,
         notes: paymentNote,
         receipt_no: receiptNo // optional custom receipt
@@ -133,7 +140,9 @@ const FeePayment = () => {
       setSuccess(`Fee collected successfully! Receipt No: ${response.data.receipt_no}`);
       
       // Reset form
-      setPaidAmount('');
+      setTuitionPaid('');
+      setTransportPaid('');
+      setMonthPaid('');
       setPaymentNote('');
       setReceiptNo('');
       
@@ -145,7 +154,9 @@ const FeePayment = () => {
   };
 
   const handleReset = () => {
-    setPaidAmount('');
+    setTuitionPaid('');
+    setTransportPaid('');
+    setMonthPaid('');
     setPaymentNote('');
     setReceiptNo('');
     setPaymentMode('Cash');
@@ -273,29 +284,70 @@ const FeePayment = () => {
                     </tr>
                     
                     {/* Payment Input Row */}
-                    <tr className="border-t border-gray-200 bg-blue-50/30">
-                      <td colSpan="3" className="py-2 px-3">
-                        <div className="text-blue-700 font-medium text-right">
-                          Hit "ENTER" or Equal(=) button after entering "Paid" amount / "भुगतान" राशि दर्ज करने के बाद एंटर या समान (=) बटन दबाएं
-                        </div>
+                    <tr className="border-t-2 border-indigo-200 bg-indigo-50/50">
+                      <td className="py-3 px-3">
+                         <div className="font-semibold text-indigo-800 text-sm mb-1">Month Paid</div>
+                         <select 
+                           className="w-full border border-indigo-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-700"
+                           value={monthPaid}
+                           onChange={(e) => setMonthPaid(e.target.value)}
+                         >
+                            <option value="">Select Month...</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="Full Year">Full Year</option>
+                            <option value="Arrears/Other">Arrears/Other</option>
+                         </select>
                       </td>
-                      <td className="py-2 px-3 font-bold bg-gray-100 flex items-center space-x-2">
-                        <span className="text-gray-700 mr-2">Paid</span>
-                        <input 
-                          type="number" 
-                          className="w-24 border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 text-right"
-                          value={paidAmount}
-                          onChange={(e) => setPaidAmount(e.target.value)}
-                        />
-                        <button className="bg-green-500 text-white w-6 h-6 flex items-center justify-center rounded font-bold hover:bg-green-600">=</button>
+                      <td className="py-3 px-3">
+                         <div className="font-semibold text-indigo-800 text-sm mb-1">Tuition Paid</div>
+                         <div className="flex items-center">
+                           <span className="text-gray-500 mr-1">₹</span>
+                           <input 
+                             type="number" 
+                             className="w-full border border-indigo-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-700"
+                             value={tuitionPaid}
+                             onChange={(e) => setTuitionPaid(e.target.value)}
+                             placeholder="0.00"
+                           />
+                         </div>
+                      </td>
+                      <td className="py-3 px-3">
+                         <div className="font-semibold text-indigo-800 text-sm mb-1">Transport Paid</div>
+                         <div className="flex items-center">
+                           <span className="text-gray-500 mr-1">₹</span>
+                           <input 
+                             type="number" 
+                             className="w-full border border-indigo-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-700"
+                             value={transportPaid}
+                             onChange={(e) => setTransportPaid(e.target.value)}
+                             placeholder="0.00"
+                           />
+                         </div>
+                      </td>
+                      <td className="py-3 px-3 align-bottom">
+                         <div className="font-semibold text-indigo-800 text-sm mb-1 text-left">Total Paid</div>
+                         <div className="font-bold text-lg text-indigo-700 text-left bg-indigo-100 rounded px-2 py-1.5 inline-block min-w-full">
+                           ₹{parsedPaidAmount}
+                         </div>
                       </td>
                     </tr>
 
                     {/* Final Due Row */}
-                    <tr className="bg-gray-50 border-t border-gray-200 border-b border-gray-200">
-                      <td colSpan="3" className="py-2 px-3 text-right font-bold text-gray-700">Due (Payable - Paid)</td>
-                      <td className={`py-2 px-3 font-bold bg-gray-100 ${remainingDue > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {remainingDue}
+                    <tr className="bg-gray-800 text-white border-t border-gray-200">
+                      <td colSpan="3" className="py-3 px-4 text-right font-bold text-lg">Remaining Due for Year</td>
+                      <td className={`py-3 px-4 font-bold text-lg text-left ${remainingDue > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                        ₹{remainingDue}
                       </td>
                     </tr>
                   </tbody>
