@@ -1,6 +1,8 @@
 const db = require('../db');
 const fs = require('fs');
+const path = require('path');
 const csv = require('csv-parser');
+const XLSX = require('xlsx');
 
 /**
  * GET /api/students/classes
@@ -139,86 +141,121 @@ exports.createStudent = async (req, res) => {
 };
 
 
+/**
+ * Normalize a header string for flexible matching.
+ */
+function normalizeHeader(h) {
+  return (h || '').toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Map raw header names to canonical field names.
+ * Returns { adm_no, name, class_name } indices/keys.
+ */
+function detectColumns(headers) {
+  const norm = headers.map(normalizeHeader);
+  const find = (...variants) => norm.findIndex(h => variants.some(v => h.includes(v)));
+
+  const admIdx   = find('admno', 'adm', 'admission', 'rollno', 'roll');
+  const nameIdx  = find('name', 'studentname', 'fullname');
+  const classIdx = find('class', 'classname', 'grade', 'std', 'standard');
+
+  return { admIdx, nameIdx, classIdx };
+}
+
+/**
+ * Parse rows from an XLSX/XLS workbook buffer.
+ * Returns array of plain objects keyed by first-row headers.
+ */
+function parseXlsx(buffer) {
+  const wb = XLSX.read(buffer, { type: 'buffer' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  // sheet_to_json with defval '' to avoid undefined cells
+  return XLSX.utils.sheet_to_json(ws, { defval: '' });
+}
+
 exports.importStudents = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
 
   const academicYear = req.body.academicYear || '2026-2027';
-  const results = [];
   const errors = [];
+  let inserted = 0;
 
-  fs.createReadStream(req.file.path)
-    .pipe(csv({ headers: false })) // Do not assume first row is header
-    .on('data', (data) => results.push(data))
-    .on('end', async () => {
+  try {
+    const ext = path.extname(req.file.originalname || '').toLowerCase();
+    let rows = []; // array of plain objects { header: value }
+
+    if (ext === '.xlsx' || ext === '.xls') {
+      // ── XLSX / XLS path ──────────────────────────────────────────────
+      const buffer = fs.readFileSync(req.file.path);
+      rows = parseXlsx(buffer);
+    } else {
+      // ── CSV path ─────────────────────────────────────────────────────
+      rows = await new Promise((resolve, reject) => {
+        const collected = [];
+        fs.createReadStream(req.file.path)
+          .pipe(csv()) // csv-parser uses first row as headers automatically
+          .on('data', d => collected.push(d))
+          .on('end', () => resolve(collected))
+          .on('error', reject);
+      });
+    }
+
+    // Clean up temp file immediately
+    fs.unlinkSync(req.file.path);
+
+    if (rows.length === 0) {
+      return res.status(400).json({ error: 'File is empty or could not be parsed.' });
+    }
+
+    // Detect columns from the first row's keys
+    const headers = Object.keys(rows[0]);
+    const { admIdx, nameIdx, classIdx } = detectColumns(headers);
+
+    if (admIdx === -1 || nameIdx === -1) {
+      return res.status(400).json({
+        error: `Could not find required columns. Found: [${headers.join(', ')}]. Need a column for Admission No and Name.`
+      });
+    }
+
+    const admKey   = headers[admIdx];
+    const nameKey  = headers[nameIdx];
+    const classKey = classIdx !== -1 ? headers[classIdx] : null;
+
+    for (const row of rows) {
+      const admNo      = (row[admKey]   || '').toString().trim();
+      const studentName = (row[nameKey] || '').toString().trim();
+      const className  = classKey ? (row[classKey] || '').toString().trim() : 'Unknown';
+
+      if (!admNo || !studentName) continue; // skip blank rows
+
       try {
-        let inserted = 0;
-        let headerMap = null;
-
-        for (const row of results) {
-          // If we haven't found the header row yet, look for it
-          if (!headerMap) {
-            const rowValues = Object.values(row).map(v => (v || '').toString().trim().toLowerCase());
-            // Check if this row looks like the header row (contains adm and name/class)
-            const admIndex = rowValues.findIndex(v => v.includes('adm') || v === 'admissionnumber');
-            const nameIndex = rowValues.findIndex(v => v === 'name' || v === 'studentname' || v === 'student name');
-            const classIndex = rowValues.findIndex(v => v === 'class' || v === 'classname' || v === 'class name');
-            
-            if (admIndex !== -1 && nameIndex !== -1) {
-              headerMap = {
-                admNo: admIndex,
-                name: nameIndex,
-                className: classIndex !== -1 ? classIndex : -1,
-              };
-            }
-            continue; // Skip the header row itself, and any preamble rows
-          }
-
-          // We have a header map, so process this as a data row
-          const admNo = row[headerMap.admNo];
-          const studentName = row[headerMap.name];
-          const className = headerMap.className !== -1 ? row[headerMap.className] : 'Unknown';
-          
-          if (!admNo || !studentName) {
-            continue; // Skip empty rows at the end of the file
-          }
-
-          try {
-            await db.query(
-              `INSERT INTO students (adm_no, name, class_name, academic_year, school_id) 
-               VALUES ($1, $2, $3, $4, $5) 
-               ON CONFLICT (school_id, adm_no, academic_year) DO UPDATE 
-               SET name = EXCLUDED.name, 
-                   class_name = EXCLUDED.class_name`,
-              [admNo, studentName, className, academicYear, req.user.school_id]
-            );
-            
-            inserted++;
-          } catch (dbErr) {
-            errors.push(`DB Error on row ${admNo}: ${dbErr.message}`);
-          }
-        }
-
-        // Cleanup uploaded file
-        fs.unlinkSync(req.file.path);
-
-        if (!headerMap) {
-          errors.push("Could not find a valid header row containing 'Adm.No.' and 'Name'.");
-        } else if (inserted === 0 && errors.length > 0) {
-           console.error('Import validation errors:', errors.slice(0, 5));
-        }
-
-        res.status(200).json({ 
-          message: 'Student Import completed', 
-          insertedCount: inserted,
-          errors 
-        });
-      } catch (err) {
-        console.error('Error importing students:', err);
-        res.status(500).json({ error: 'Internal server error during import' });
+        await db.query(
+          `INSERT INTO students (adm_no, name, class_name, academic_year, school_id)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (school_id, adm_no, academic_year) DO UPDATE
+           SET name = EXCLUDED.name, class_name = EXCLUDED.class_name`,
+          [admNo, studentName, className || 'Unknown', academicYear, req.user.school_id]
+        );
+        inserted++;
+      } catch (dbErr) {
+        errors.push(`Row [${admNo}]: ${dbErr.message}`);
       }
+    }
+
+    res.status(200).json({
+      message: `Student import completed. ${inserted} record(s) saved.`,
+      insertedCount: inserted,
+      errors,
     });
+  } catch (err) {
+    // Attempt cleanup on unexpected errors
+    try { if (req.file?.path) fs.unlinkSync(req.file.path); } catch (_) {}
+    console.error('Error importing students:', err);
+    res.status(500).json({ error: 'Internal server error during import.' });
+  }
 };
 
 /**
@@ -268,8 +305,25 @@ exports.exportStudents = async (req, res) => {
  * Returns a blank CSV template with the correct headers for student import.
  */
 exports.downloadStudentTemplate = (req, res) => {
-  const csv = 'adm_no,name,class_name\nB001,John Doe,10th\nB002,Jane Smith,LKG\n';
+  const format = (req.query.format || 'csv').toLowerCase();
+
+  if (format === 'xlsx') {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['adm_no', 'name', 'class_name'],
+      ['B001', 'John Doe', '10th'],
+      ['B002', 'Jane Smith', 'LKG'],
+    ]);
+    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="student_import_template.xlsx"');
+    return res.status(200).send(buf);
+  }
+
+  // Default: CSV
+  const csvContent = 'adm_no,name,class_name\nB001,John Doe,10th\nB002,Jane Smith,LKG\n';
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="student_import_template.csv"');
-  res.status(200).send(csv);
+  res.status(200).send(csvContent);
 };

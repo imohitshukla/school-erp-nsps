@@ -30,7 +30,7 @@ const StatusBadge = ({ type, children }) => {
 };
 
 // ─── Drop-zone component ──────────────────────────────────────────────────────
-const DropZone = ({ onFile, accept = '.csv', label }) => {
+const DropZone = ({ onFile, accept = '.csv,.xlsx,.xls', label }) => {
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -77,8 +77,8 @@ const DropZone = ({ onFile, accept = '.csv', label }) => {
       ) : (
         <>
           <p className="font-semibold text-gray-700">{label}</p>
-          <p className="text-sm text-gray-400">Drag & drop your CSV here, or click to browse</p>
-          <StatusBadge type="info">Only CSV files accepted</StatusBadge>
+          <p className="text-sm text-gray-400">Drag & drop here, or click to browse</p>
+          <StatusBadge type="info">CSV or Excel (.xlsx) accepted</StatusBadge>
         </>
       )}
     </div>
@@ -285,7 +285,7 @@ const DataManagement = () => {
             <div className="bg-slate-50 rounded-xl p-4 text-xs text-gray-600 border border-slate-100">
               <p className="font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
                 <Table2 size={14} className="text-indigo-500" />
-                Required CSV columns:
+                Required columns:
               </p>
               {importTab === 'students' ? (
                 <code className="font-mono bg-white px-2 py-1 rounded border border-slate-200 text-gray-700 block">
@@ -296,7 +296,7 @@ const DataManagement = () => {
                   adm_no, total_amount, transport_fee, total_paid, concession, payment_mode, payment_date, transaction_id
                 </code>
               )}
-              <p className="mt-2 text-gray-400">Column names are flexible — the importer auto-detects headers.</p>
+              <p className="mt-2 text-gray-400">Column names are flexible — the importer auto-detects headers. Accepts <strong>.csv</strong> and <strong>.xlsx</strong>.</p>
             </div>
 
             {/* Import button */}
@@ -422,11 +422,18 @@ const DataManagement = () => {
           </h3>
           <div className="flex flex-wrap gap-3">
             <button
-              id="template-students-btn"
+              id="template-students-csv-btn"
               onClick={() => handleTemplateDownload('students')}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm text-gray-700 font-medium hover:border-indigo-300 hover:text-indigo-700 hover:bg-indigo-50 transition-all shadow-sm"
             >
               <FileDown size={15} className="text-indigo-500" /> Student Template CSV
+            </button>
+            <button
+              id="template-students-xlsx-btn"
+              onClick={() => api.downloadBlob('/api/students/template?format=xlsx', 'student_import_template.xlsx').catch(e => alert(e.message))}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm text-gray-700 font-medium hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50 transition-all shadow-sm"
+            >
+              <FileDown size={15} className="text-emerald-500" /> Student Template XLSX
             </button>
             <button
               id="template-fees-btn"
