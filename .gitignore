@@ -1,3 +1,14 @@
 node_modules/
 .env*
 .DS_Store
+
+# Logs
+*.log
+logs/
+
+# Temp upload folder
+uploads/
+
+# Build output
+dist/
+build/
