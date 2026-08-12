@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const academicController = require('../controllers/academicController');
-const { verifyToken } = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.use(verifyToken);
+router.use(authMiddleware);
 
 router.get('/exams', academicController.getExam);
 router.post('/exams', academicController.createExam);
