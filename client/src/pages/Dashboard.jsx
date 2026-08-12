@@ -47,11 +47,12 @@ const Dashboard = () => {
     setUploading(true);
     try {
       const response = await api.postForm('/api/students/import', formData);
-      alert(`Student Import completed! Successfully added/updated ${response.insertedCount} students.`);
-      fetchStats(); // Refresh dashboard
+      const errSummary = response.errors?.length > 0 ? `\n\nWarnings:\n${response.errors.slice(0, 3).join('\n')}` : '';
+      alert(`✅ Student Import Done!\nAdded/Updated: ${response.insertedCount} students.${errSummary}`);
+      fetchStats();
     } catch (error) {
-      console.error('Upload error:', error);
-      alert('Failed to import students. Please check your CSV format.');
+      const msg = error?.response?.data?.error || error?.message || 'Unknown error';
+      alert(`❌ Failed to import students.\n\n${msg}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -69,10 +70,11 @@ const Dashboard = () => {
     setFeeUploading(true);
     try {
       const response = await api.postForm('/api/fees/import', formData);
-      alert(`Fee Import completed! Successfully updated ${response.insertedCount} student fee records.`);
+      const errSummary = response.errors?.length > 0 ? `\n\nWarnings:\n${response.errors.slice(0, 3).join('\n')}` : '';
+      alert(`✅ Fee Import Done!\nUpdated: ${response.insertedCount} records.${errSummary}`);
     } catch (error) {
-      console.error('Fee upload error:', error);
-      alert('Failed to import fees. Please check your CSV format.');
+      const msg = error?.response?.data?.error || error?.message || 'Unknown error';
+      alert(`❌ Failed to import fees.\n\n${msg}`);
     } finally {
       setFeeUploading(false);
       if (feeFileInputRef.current) feeFileInputRef.current.value = '';
@@ -98,7 +100,7 @@ const Dashboard = () => {
             <div className="relative">
               <input 
                 type="file" 
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
                 className="hidden" 
                 ref={fileInputRef}
                 onChange={handleFileUpload}
@@ -116,7 +118,7 @@ const Dashboard = () => {
             <div className="relative">
               <input 
                 type="file" 
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
                 className="hidden" 
                 ref={feeFileInputRef}
                 onChange={handleFeeFileUpload}

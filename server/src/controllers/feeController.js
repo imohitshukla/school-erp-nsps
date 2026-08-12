@@ -115,8 +115,14 @@ exports.getDailyCollection = async (req, res) => {
 };
 
 const fs = require('fs');
+const path = require('path');
 const csv = require('csv-parser');
+const XLSX = require('xlsx');
 const { parseCSVDate } = require('../utils/dateParser');
+
+function normalizeKey(h) {
+  return (h || '').toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+}
 
 exports.importFees = async (req, res) => {
   if (!req.file) {
@@ -124,118 +130,119 @@ exports.importFees = async (req, res) => {
   }
 
   const academicYear = req.body.academicYear || '2026-2027';
-  const results = [];
   const errors = [];
+  let inserted = 0;
 
-  fs.createReadStream(req.file.path)
-    .pipe(csv({ headers: false }))
-    .on('data', (data) => results.push(data))
-    .on('end', async () => {
+  try {
+    const ext = path.extname(req.file.originalname || '').toLowerCase();
+    let rows = [];
+
+    if (ext === '.xlsx' || ext === '.xls') {
+      const buffer = fs.readFileSync(req.file.path);
+      const wb = XLSX.read(buffer, { type: 'buffer' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    } else {
+      rows = await new Promise((resolve, reject) => {
+        const collected = [];
+        fs.createReadStream(req.file.path)
+          .pipe(csv())
+          .on('data', d => collected.push(d))
+          .on('end', () => resolve(collected))
+          .on('error', reject);
+      });
+    }
+
+    fs.unlinkSync(req.file.path);
+
+    if (rows.length === 0) {
+      return res.status(400).json({ error: 'File is empty or could not be parsed.' });
+    }
+
+    // Map headers flexibly
+    const headers = Object.keys(rows[0]);
+    const norm = headers.map(normalizeKey);
+    const find = (...vs) => norm.findIndex(h => vs.some(v => h.includes(v)));
+
+    const admKey        = headers[find('admno', 'adm', 'admission', 'rollno')];
+    const payableKey    = headers[find('totalamount', 'payable', 'tuition', 'fees')];
+    const transportKey  = headers[find('transport')];
+    const paidKey       = headers[find('totalpaid', 'paid')];
+    const concessionKey = headers[find('concession', 'discount')];
+    const modeKey       = headers[find('paymentmode', 'mode')];
+    const dateKey       = headers[find('paymentdate', 'date')];
+    const receiptKey    = headers[find('transactionid', 'receipt', 'txn')];
+
+    if (!admKey) {
+      return res.status(400).json({
+        error: `Could not find admission number column. Found: [${headers.join(', ')}]`
+      });
+    }
+
+    for (const row of rows) {
+      const admNo = (row[admKey] || '').toString().trim();
+      if (!admNo) continue;
+
+      const payableFee   = parseFloat(row[payableKey]   || 0) || 0;
+      const transportFee = parseFloat(row[transportKey] || 0) || 0;
+      const paidPast     = parseFloat(row[paidKey]      || 0) || 0;
+      const concession   = parseFloat(row[concessionKey]|| 0) || 0;
+      const paymentMode  = (row[modeKey] || 'Cash').toString().trim() || 'Cash';
+      const rawDate      = dateKey ? row[dateKey] : null;
+      const receiptNo    = (row[receiptKey] || '').toString().trim()
+                          || `FEE-IMP-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
+
       try {
-        let inserted = 0;
-        let headerMap = null;
+        // Step 1: update student fee structure and get student DB id
+        const updateResult = await db.query(
+          `UPDATE students
+           SET payable_fee = $1, transport_fee = $2, concession = $3
+           WHERE adm_no = $4 AND school_id = $5 AND academic_year = $6
+           RETURNING id`,
+          [payableFee, transportFee, concession, admNo, req.user.school_id, academicYear]
+        );
 
-        for (const row of results) {
-          if (!headerMap) {
-            const rowValues = Object.values(row).map(v => (v || '').toString().trim().toLowerCase());
-            const admIndex = rowValues.findIndex(v => v.includes('adm') || v === 'admissionnumber');
-            
-            if (admIndex !== -1) {
-              headerMap = {
-                admNo: admIndex,
-                payableFee: rowValues.findIndex(v => v.includes('totalamount') || v.includes('payable') || v.includes('tuition')),
-                transportFee: rowValues.findIndex(v => v.includes('transport')),
-                paidPast: rowValues.findIndex(v => v.includes('totalpaid') || v === 'paid' || v.includes('paid')),
-                concession: rowValues.findIndex(v => v.includes('discount') || v.includes('concession')),
-                paymentMode: rowValues.findIndex(v => v.includes('payment mode') || v.includes('mode')),
-                paymentDate: rowValues.findIndex(v => v.includes('payment date') || v.includes('date')),
-                receiptNo: rowValues.findIndex(v => v.includes('transaction id') || v.includes('receipt') || v.includes('txn'))
-              };
-              console.log('DEBUG: Found Headers:', rowValues);
-              console.log('DEBUG: Header Map:', headerMap);
-            }
-            continue;
-          }
-
-          const admNo = row[headerMap.admNo];
-          if (!admNo) continue;
-
-          const payableFee = headerMap.payableFee !== -1 ? parseFloat(row[headerMap.payableFee] || 0) : 0;
-          const transportFee = headerMap.transportFee !== -1 ? parseFloat(row[headerMap.transportFee] || 0) : 0;
-          const paidPast = headerMap.paidPast !== -1 ? parseFloat(row[headerMap.paidPast] || 0) : 0;
-          const concession = headerMap.concession !== -1 ? parseFloat(row[headerMap.concession] || 0) : 0;
-
-          let paymentMode = headerMap.paymentMode !== -1 ? row[headerMap.paymentMode] : 'Cash';
-          if (!paymentMode) paymentMode = 'Cash';
-          
-          let paymentDate = headerMap.paymentDate !== -1 ? row[headerMap.paymentDate] : null;
-          console.log(`DEBUG: Raw paymentDate for admNo ${admNo} is:`, paymentDate);
-          let receiptNo = headerMap.receiptNo !== -1 ? row[headerMap.receiptNo] : null;
-
-          if (!receiptNo) {
-             receiptNo = `FEE-IMP-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-          }
-
-          try {
-            // Update the student record with fee structure
-            const updateResult = await db.query(
-              `UPDATE students 
-               SET payable_fee = $1, transport_fee = $2, concession = $3 
-               WHERE adm_no = $4 AND school_id = $5 AND academic_year = $6
-               RETURNING id`,
-              [payableFee, transportFee, concession, admNo, req.user.school_id, academicYear]
-            );
-
-            if (updateResult.rows.length === 0) {
-              errors.push(`Student ${admNo} not found in this school for year ${academicYear}. Please import students first.`);
-              continue;
-            }
-
-            if (paidPast > 0) {
-               const parsedDate = parseCSVDate(paymentDate);
-               
-               await db.query(
-                  `INSERT INTO fee_ledger (student_id, receipt_no, amount, payment_mode, notes, collected_by, created_at, school_id, fee_head_id, concession)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                   ON CONFLICT DO NOTHING`,
-                  [
-                    admNo, 
-                    receiptNo, 
-                    paidPast, 
-                    paymentMode, 
-                    'Imported from CSV', 
-                    'Admin', 
-                    parsedDate,
-                    req.user.school_id,
-                    1, // Default fee_head_id for imported data
-                    concession
-                  ]
-               );
-            }
-            
-            inserted++;
-          } catch (dbErr) {
-            errors.push(`DB Error on row ${admNo}: ${dbErr.message}`);
-          }
+        if (updateResult.rows.length === 0) {
+          errors.push(`${admNo}: student not found for year ${academicYear}. Import students first.`);
+          continue;
         }
 
-        fs.unlinkSync(req.file.path);
+        const studentDbId = updateResult.rows[0].id;
 
-        if (!headerMap) {
-          errors.push("Could not find a valid header row containing 'Adm.No.'.");
+        // Step 2: log past payment in ledger if paidPast > 0
+        if (paidPast > 0) {
+          const parsedDate = parseCSVDate(rawDate);
+          await db.query(
+            `INSERT INTO fee_ledger
+               (student_id, receipt_no, amount, payment_mode, notes, collected_by, created_at, school_id, fee_head_id, concession)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             ON CONFLICT DO NOTHING`,
+            [
+              studentDbId, receiptNo, paidPast, paymentMode,
+              'Imported from file', 'Admin', parsedDate,
+              req.user.school_id, 1, concession
+            ]
+          );
         }
 
-        res.status(200).json({ 
-          message: 'Fee Import completed', 
-          insertedCount: inserted,
-          errors 
-        });
-      } catch (err) {
-        console.error('Error importing fees:', err);
-        res.status(500).json({ error: 'Internal server error during fee import' });
+        inserted++;
+      } catch (dbErr) {
+        errors.push(`Row [${admNo}]: ${dbErr.message}`);
       }
+    }
+
+    res.status(200).json({
+      message: `Fee import completed. ${inserted} record(s) updated.`,
+      insertedCount: inserted,
+      errors,
     });
+  } catch (err) {
+    try { if (req.file?.path) fs.unlinkSync(req.file.path); } catch (_) {}
+    console.error('Error importing fees:', err);
+    res.status(500).json({ error: 'Internal server error during fee import.' });
+  }
 };
+
 
 // --- FEE DASHBOARD STATS ---
 exports.getFeeDashboardStats = async (req, res) => {

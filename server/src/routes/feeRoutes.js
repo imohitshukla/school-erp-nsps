@@ -4,16 +4,30 @@ const feeController = require('../controllers/feeController');
 const multer = require('multer');
 const path = require('path');
 
+const fs = require('fs');
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../../uploads/');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../../uploads/'));
+    cb(null, uploadsDir);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + '-' + file.originalname);
   }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const ext = (file.originalname || '').split('.').pop().toLowerCase();
+    if (['csv', 'xlsx', 'xls'].includes(ext)) cb(null, true);
+    else cb(new Error('Only CSV and Excel (.xlsx/.xls) files are allowed'));
+  },
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 // Collect new fee
 router.post('/collect', feeController.collectFee);
