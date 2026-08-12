@@ -141,7 +141,26 @@ exports.importFees = async (req, res) => {
       const buffer = fs.readFileSync(req.file.path);
       const wb = XLSX.read(buffer, { type: 'buffer' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      // Get raw rows (no header assumption)
+      const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      // Find the header row — look for 'adm' in first 10 rows
+      let headerRowIdx = 0;
+      for (let i = 0; i < Math.min(rawRows.length, 10); i++) {
+        const row = rawRows[i].map(c => (c || '').toString().trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+        if (row.some(c => c.includes('adm') || c.includes('rollno') || c.includes('admission'))) {
+          headerRowIdx = i;
+          break;
+        }
+      }
+      const headers = rawRows[headerRowIdx].map(c => (c || '').toString().trim());
+      rows = rawRows.slice(headerRowIdx + 1)
+        .map(row => {
+          const obj = {};
+          headers.forEach((h, i) => { obj[h] = (row[i] === undefined ? '' : row[i]); });
+          return obj;
+        })
+        .filter(row => Object.values(row).some(v => (v || '').toString().trim() !== ''));
+
     } else {
       rows = await new Promise((resolve, reject) => {
         const collected = [];

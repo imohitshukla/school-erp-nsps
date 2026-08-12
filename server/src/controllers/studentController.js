@@ -165,13 +165,45 @@ function detectColumns(headers) {
 
 /**
  * Parse rows from an XLSX/XLS workbook buffer.
- * Returns array of plain objects keyed by first-row headers.
+ * Scans all rows to find the actual header row (skips preamble rows
+ * like school name/title that appear before the real headers).
+ * Returns array of plain objects keyed by detected headers.
  */
 function parseXlsx(buffer) {
   const wb = XLSX.read(buffer, { type: 'buffer' });
   const ws = wb.Sheets[wb.SheetNames[0]];
-  // sheet_to_json with defval '' to avoid undefined cells
-  return XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+  // Get all rows as raw arrays (no header assumption)
+  const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  if (rawRows.length === 0) return [];
+
+  // Find the header row — the first row that contains 'adm' or 'name'
+  let headerRowIdx = -1;
+  for (let i = 0; i < Math.min(rawRows.length, 10); i++) {
+    const row = rawRows[i].map(c => (c || '').toString().trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+    const hasAdm  = row.some(c => c.includes('adm') || c.includes('rollno') || c.includes('admission'));
+    const hasName = row.some(c => c === 'name' || c.includes('studentname') || c.includes('fullname'));
+    if (hasAdm || hasName) {
+      headerRowIdx = i;
+      break;
+    }
+  }
+
+  // Fall back to row 0 if no header row found
+  if (headerRowIdx === -1) headerRowIdx = 0;
+
+  const headers = rawRows[headerRowIdx].map(c => (c || '').toString().trim());
+
+  // Build objects from all rows after the header row
+  const dataRows = rawRows.slice(headerRowIdx + 1);
+  return dataRows
+    .map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = (row[i] === undefined ? '' : row[i]); });
+      return obj;
+    })
+    .filter(row => Object.values(row).some(v => (v || '').toString().trim() !== ''));
 }
 
 exports.importStudents = async (req, res) => {
