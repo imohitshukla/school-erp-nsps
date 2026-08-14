@@ -288,6 +288,7 @@ exports.importStudents = async (req, res) => {
 
       if (!admNo || !studentName) continue; // skip blank rows
 
+      try {
         await db.query(
           `INSERT INTO students (adm_no, name, class_name, academic_year, school_id)
            VALUES ($1, $2, $3, $4, $5)
