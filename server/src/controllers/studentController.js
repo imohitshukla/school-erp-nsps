@@ -54,12 +54,37 @@ exports.getStudentByAdmNo = async (req, res) => {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    res.status(200).json({ data: result.rows[0] });
+    const student = result.rows[0];
+
+    // Also fetch monthly dues for this student
+    const year = academicYear || '2026-2027';
+    const duesResult = await db.query(
+      `SELECT * FROM student_monthly_dues 
+       WHERE student_adm_no = $1 AND school_id = $2 AND academic_year = $3
+       ORDER BY month_index ASC`,
+      [admNo, req.user.school_id, year]
+    );
+
+    // Calculate summary from monthly dues
+    const monthlyDues = duesResult.rows;
+    const totalDue = monthlyDues.reduce((sum, m) => sum + parseFloat(m.tuition_due || 0) + parseFloat(m.transport_due || 0) + parseFloat(m.other_due || 0) - parseFloat(m.concession || 0), 0);
+    const totalPaid = monthlyDues.reduce((sum, m) => sum + parseFloat(m.tuition_paid || 0) + parseFloat(m.transport_paid || 0) + parseFloat(m.other_paid || 0), 0);
+
+    res.status(200).json({
+      data: {
+        ...student,
+        monthly_dues: monthlyDues,
+        total_annual_due: totalDue,
+        total_annual_paid: totalPaid,
+        total_balance: totalDue - totalPaid,
+      }
+    });
   } catch (error) {
     console.error('Error fetching student by adm_no:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 exports.getStudentStats = async (req, res) => {
   try {
@@ -263,7 +288,6 @@ exports.importStudents = async (req, res) => {
 
       if (!admNo || !studentName) continue; // skip blank rows
 
-      try {
         await db.query(
           `INSERT INTO students (adm_no, name, class_name, academic_year, school_id)
            VALUES ($1, $2, $3, $4, $5)
@@ -271,6 +295,36 @@ exports.importStudents = async (req, res) => {
            SET name = EXCLUDED.name, class_name = EXCLUDED.class_name`,
           [admNo, studentName, className || 'Unknown', academicYear, req.user.school_id]
         );
+
+        // Auto-apply fee template if one exists for this class
+        const tplRes = await db.query(
+          `SELECT tuition_fee, transport_fee, other_fee FROM class_fee_templates 
+           WHERE class_name = $1 AND academic_year = $2 AND school_id = $3`,
+          [className, academicYear, req.user.school_id]
+        );
+        if (tplRes.rows.length > 0) {
+          const tpl = tplRes.rows[0];
+          const MONTH_NAMES = ['April','May','June','July','August','September','October','November','December','January','February','March'];
+          const mTuition = Math.round((parseFloat(tpl.tuition_fee || 0) / 12) * 100) / 100;
+          const mTransport = Math.round((parseFloat(tpl.transport_fee || 0) / 12) * 100) / 100;
+          const mOther = Math.round((parseFloat(tpl.other_fee || 0) / 12) * 100) / 100;
+
+          for (let idx = 0; idx < 12; idx++) {
+            await db.query(
+              `INSERT INTO student_monthly_dues 
+                (student_adm_no, month_name, month_index, tuition_due, transport_due, other_due, concession, academic_year, school_id)
+               VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8)
+               ON CONFLICT (student_adm_no, month_name, academic_year, school_id) DO NOTHING`,
+              [admNo, MONTH_NAMES[idx], idx + 1, mTuition, mTransport, mOther, academicYear, req.user.school_id]
+            );
+          }
+
+          await db.query(
+            `UPDATE students SET payable_fee = $1, transport_fee = $2 WHERE adm_no = $3 AND school_id = $4 AND academic_year = $5`,
+            [tpl.tuition_fee, tpl.transport_fee, admNo, req.user.school_id, academicYear]
+          );
+        }
+
         inserted++;
       } catch (dbErr) {
         errors.push(`Row [${admNo}]: ${dbErr.message}`);

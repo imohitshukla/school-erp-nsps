@@ -13,6 +13,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
     { name: 'Administration', path: '/admin', icon: Settings },
     { name: 'Communication', path: '/communication', icon: MessageSquare },
     { name: 'Financial', path: '/fees/dashboard', icon: IndianRupee },
+    { name: 'Fee Structure Setup', path: '/fees/setup', icon: Sliders },
     { name: 'Data Management', path: '/data', icon: Database },
     { name: 'Setup Your School', path: '/setup', icon: Sliders },
     { name: 'Website Builder', path: '/website', icon: Monitor },

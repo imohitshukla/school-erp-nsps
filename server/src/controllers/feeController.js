@@ -3,17 +3,24 @@ const logger = require('../utils/logger');
 
 /**
  * POST /api/fees/collect
- * Collects a fee payment for a student identified by adm_no.
+ * Collects fee for one or more months.
+ * Body: { student_id (adm_no), months: ['April','May'], tuition_amount, transport_amount, payment_mode, notes, receipt_no }
  */
 exports.collectFee = async (req, res) => {
-  const { student_id, amount, payment_mode, notes, receipt_no: schoolReceiptNo, tuition_amount, transport_amount, month_paid } = req.body;
+  const { student_id, amount, payment_mode, notes, receipt_no: schoolReceiptNo, tuition_amount, transport_amount, months, month_paid } = req.body;
 
-  if (!student_id || !amount || !payment_mode) {
-    return res.status(400).json({ error: 'Missing required fields: student_id, amount, payment_mode' });
+  if (!student_id || !payment_mode) {
+    return res.status(400).json({ error: 'Missing required fields: student_id, payment_mode' });
   }
 
-  const parsedAmount = parseFloat(amount);
-  if (isNaN(parsedAmount) || parsedAmount <= 0) {
+  // Support both old single-month and new multi-month flow
+  const monthList = months || (month_paid ? [month_paid] : []);
+
+  const parsedTuition   = parseFloat(tuition_amount || 0);
+  const parsedTransport = parseFloat(transport_amount || 0);
+  const parsedAmount    = parseFloat(amount) || (parsedTuition + parsedTransport);
+
+  if (parsedAmount <= 0) {
     return res.status(400).json({ error: 'Amount must be a positive number' });
   }
 
@@ -27,16 +34,42 @@ exports.collectFee = async (req, res) => {
     const student = studentResult.rows[0];
     const receiptNo = schoolReceiptNo || `REC-${Date.now()}`;
     const collectedBy = req.user?.username || 'admin';
+    const monthsCovered = monthList.join(',');
 
+    // 1. Create ledger entry
     const ledgerResult = await db.query(
       `INSERT INTO fee_ledger 
-         (receipt_no, student_id, amount, payment_mode, transaction_reference, collected_by, status, notes, school_id, tuition_amount, transport_amount, month_paid) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+         (receipt_no, student_id, amount, payment_mode, transaction_reference, collected_by, status, notes, school_id, tuition_amount, transport_amount, month_paid, months_covered) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
        RETURNING *`,
-      [receiptNo, student.adm_no, parsedAmount, payment_mode, `TXN-${Date.now()}`, collectedBy, 'Success', notes || '', req.user.school_id, parseFloat(tuition_amount || 0), parseFloat(transport_amount || 0), month_paid || null]
+      [receiptNo, student.adm_no, parsedAmount, payment_mode, `TXN-${Date.now()}`, collectedBy, 'Success', notes || '', req.user.school_id, parsedTuition, parsedTransport, monthList[0] || null, monthsCovered || null]
     );
 
-    // Update the student's paid_past
+    // 2. Update monthly dues if months specified
+    if (monthList.length > 0) {
+      // Split the amount evenly per month if individual amounts not given
+      const perMonthTuition   = parsedTuition > 0 ? Math.round((parsedTuition / monthList.length) * 100) / 100 : 0;
+      const perMonthTransport = parsedTransport > 0 ? Math.round((parsedTransport / monthList.length) * 100) / 100 : 0;
+
+      for (const monthName of monthList) {
+        await db.query(
+          `UPDATE student_monthly_dues
+           SET tuition_paid = tuition_paid + $1,
+               transport_paid = transport_paid + $2,
+               status = CASE
+                 WHEN (tuition_paid + $1 + transport_paid + $2 + other_paid) >= (tuition_due + transport_due + other_due - concession) THEN 'PAID'
+                 WHEN (tuition_paid + $1 + transport_paid + $2 + other_paid) > 0 THEN 'PARTIAL'
+                 ELSE status
+               END,
+               paid_at = NOW(),
+               receipt_no = $3
+           WHERE student_adm_no = $4 AND month_name = $5 AND school_id = $6 AND academic_year = $7`,
+          [perMonthTuition, perMonthTransport, receiptNo, student.adm_no, monthName, req.user.school_id, '2026-2027']
+        );
+      }
+    }
+
+    // 3. Update the student's flat paid_past for backward compatibility
     await db.query(
       `UPDATE students SET paid_past = COALESCE(paid_past, 0) + $1 WHERE adm_no = $2 AND school_id = $3`,
       [parsedAmount, student.adm_no, req.user.school_id]
@@ -49,6 +82,7 @@ exports.collectFee = async (req, res) => {
         student_name: student.name,
         adm_no: student.adm_no,
         class_name: student.class_name,
+        months_paid: monthList,
       },
     });
   } catch (error) {
@@ -59,6 +93,7 @@ exports.collectFee = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 /**
  * GET /api/fees/daily-collection
@@ -217,7 +252,7 @@ exports.importFees = async (req, res) => {
           `UPDATE students
            SET payable_fee = $1, transport_fee = $2, concession = $3
            WHERE adm_no = $4 AND school_id = $5 AND academic_year = $6
-           RETURNING id`,
+           RETURNING id, class_name`,
           [payableFee, transportFee, concession, admNo, req.user.school_id, academicYear]
         );
 
@@ -228,7 +263,31 @@ exports.importFees = async (req, res) => {
 
         const studentDbId = updateResult.rows[0].id;
 
-        // Step 2: log past payment in ledger if paidPast > 0
+        // Step 1b: Upsert 12 monthly due rows in student_monthly_dues
+        const MONTH_NAMES = [
+          'April', 'May', 'June', 'July', 'August', 'September', 
+          'October', 'November', 'December', 'January', 'February', 'March'
+        ];
+        const mTuition = Math.round((payableFee / 12) * 100) / 100;
+        const mTransport = Math.round((transportFee / 12) * 100) / 100;
+        const mConcession = Math.round((concession / 12) * 100) / 100;
+        const mNetDue = mTuition + mTransport - mConcession;
+
+        for (let idx = 0; idx < 12; idx++) {
+          await db.query(
+            `INSERT INTO student_monthly_dues
+              (student_adm_no, month_name, month_index, tuition_due, transport_due, other_due, concession, academic_year, school_id)
+             VALUES ($1, $2, $3, $4, $5, 0, $6, $7, $8)
+             ON CONFLICT (student_adm_no, month_name, academic_year, school_id)
+             DO UPDATE SET
+               tuition_due = EXCLUDED.tuition_due,
+               transport_due = EXCLUDED.transport_due,
+               concession = EXCLUDED.concession`,
+            [admNo, MONTH_NAMES[idx], idx + 1, mTuition, mTransport, mConcession, academicYear, req.user.school_id]
+          );
+        }
+
+        // Step 2: log past payment in ledger if paidPast > 0 and distribute across monthly dues
         if (paidPast > 0) {
           const parsedDate = parseCSVDate(rawDate);
           await db.query(
@@ -242,6 +301,36 @@ exports.importFees = async (req, res) => {
               req.user.school_id, 1, concession
             ]
           );
+
+          // Distribute paidPast across months April -> March
+          let remainingPayment = paidPast;
+          for (let idx = 0; idx < 12; idx++) {
+            if (remainingPayment <= 0) break;
+            const monthName = MONTH_NAMES[idx];
+
+            const payForThisMonth = Math.min(remainingPayment, mNetDue > 0 ? mNetDue : 0);
+            if (payForThisMonth > 0) {
+              const tuitionPortion = mTuition > 0 ? Math.min(payForThisMonth, mTuition) : 0;
+              const transportPortion = Math.max(0, payForThisMonth - tuitionPortion);
+
+              await db.query(
+                `UPDATE student_monthly_dues
+                 SET tuition_paid = LEAST(tuition_due, tuition_paid + $1),
+                     transport_paid = LEAST(transport_due, transport_paid + $2),
+                     status = CASE
+                       WHEN (tuition_paid + $1 + transport_paid + $2) >= (tuition_due + transport_due - concession) THEN 'PAID'
+                       WHEN (tuition_paid + $1 + transport_paid + $2) > 0 THEN 'PARTIAL'
+                       ELSE status
+                     END,
+                     paid_at = NOW(),
+                     receipt_no = $3
+                 WHERE student_adm_no = $4 AND month_name = $5 AND school_id = $6 AND academic_year = $7`,
+                [tuitionPortion, transportPortion, receiptNo, admNo, monthName, req.user.school_id, academicYear]
+              );
+
+              remainingPayment -= payForThisMonth;
+            }
+          }
         }
 
         inserted++;

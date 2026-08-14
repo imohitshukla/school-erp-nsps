@@ -8,6 +8,7 @@ import FeeDashboard from './pages/FeeDashboard';
 import FeeReports from './pages/FeeReports';
 
 import FeePayment from './pages/FeePayment';
+import FeeSetup from './pages/FeeSetup';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AppProvider } from './context/AppContext';
@@ -39,6 +40,7 @@ function App() {
             <Route path="admin" element={<Administration />} />
             <Route path="communication" element={<Communication />} />
             <Route path="fees/dashboard" element={<FeeDashboard />} />
+            <Route path="fees/setup" element={<FeeSetup />} />
             <Route path="fees/reports" element={<FeeReports />} />
             <Route path="fees/daily-collection" element={<DailyCollectionReport />} />
             <Route path="fees/payment" element={<FeePayment />} />
