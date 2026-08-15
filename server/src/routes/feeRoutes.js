@@ -32,6 +32,12 @@ const upload = multer({
 // Collect new fee
 router.post('/collect', feeController.collectFee);
 
+// Manual historical fee entry (admin backdating)
+router.post('/manual-entry', feeController.manualFeeEntry);
+
+// Generate monthly charges for all students (cron-ready)
+router.post('/generate-monthly', feeController.generateMonthlyCharges);
+
 // Get daily collection report
 router.get('/daily-collection', feeController.getDailyCollection);
 router.get('/dashboard-stats', feeController.getFeeDashboardStats);
@@ -52,3 +58,4 @@ router.get('/reports/category', feeController.getCategoryWiseBreakdown);
 router.get('/reports/defaulters', feeController.getDefaulterForecasting);
 
 module.exports = router;
+

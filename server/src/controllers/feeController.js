@@ -103,19 +103,32 @@ exports.getDailyCollection = async (req, res) => {
   const { startDate, endDate, class: classFilter, mode: modeFilter } = req.query;
 
   try {
+    // Dual-JOIN: s1 = exact match, s2 = fallback for plain-numeric adm_no imports
+    // (e.g. fee_ledger.student_id = '4453' but students.adm_no = '4453Ns')
     let query = `
       SELECT 
+        l.id,
         l.receipt_no,
-        l.student_id       AS adm_no,
-        COALESCE(s.name, 'Unknown Student') AS student_name,
-        COALESCE(s.class_name, 'N/A')       AS class,
-        l.amount           AS pay_amt,
-        l.payment_mode     AS mode,
+        l.student_id                                                AS adm_no,
+        COALESCE(s1.name, s2.name, 'Unknown Student')               AS student_name,
+        COALESCE(s1.class_name, s2.class_name, 'N/A')               AS class,
+        l.amount                                                    AS pay_amt,
+        COALESCE(l.tuition_amount, 0)                               AS tuition_amount,
+        COALESCE(l.transport_amount, 0)                             AS transport_amount,
+        COALESCE(l.concession, 0)                                   AS concession,
+        l.payment_mode                                              AS mode,
+        l.billing_month,
+        l.months_covered,
         l.notes,
-        l.created_at       AS date_and_time,
-        l.collected_by     AS taken_by
+        l.created_at                                                AS date_and_time,
+        l.collected_by                                              AS taken_by,
+        l.status
       FROM fee_ledger l
-      LEFT JOIN students s ON s.adm_no = l.student_id AND s.school_id = l.school_id
+      LEFT JOIN students s1
+        ON s1.adm_no = l.student_id AND s1.school_id = l.school_id
+      LEFT JOIN students s2
+        ON s2.adm_no = (l.student_id || 'Ns') AND s2.school_id = l.school_id
+        AND s1.adm_no IS NULL
       WHERE l.status = 'Success' AND l.school_id = $1
     `;
 
@@ -131,7 +144,8 @@ exports.getDailyCollection = async (req, res) => {
     }
     if (classFilter && classFilter !== 'All') {
       params.push(classFilter);
-      query += ` AND s.class_name = $${params.length}`;
+      // Filter on either join path
+      query += ` AND (s1.class_name = $${params.length} OR s2.class_name = $${params.length})`;
     }
     if (modeFilter && modeFilter !== 'All') {
       params.push(modeFilter);
@@ -234,7 +248,7 @@ exports.importFees = async (req, res) => {
     }
 
     for (const row of rows) {
-      const admNo = (row[admKey] || '').toString().trim();
+      let admNo = (row[admKey] || '').toString().trim();
       if (!admNo) continue;
 
       const payableFee   = parseFloat(row[payableKey]   || 0) || 0;
@@ -248,7 +262,8 @@ exports.importFees = async (req, res) => {
 
       try {
         // Step 1: update student fee structure and get student DB id
-        const updateResult = await db.query(
+        // Try exact adm_no first; if purely numeric and no match, try appending 'Ns'
+        let updateResult = await db.query(
           `UPDATE students
            SET payable_fee = $1, transport_fee = $2, concession = $3
            WHERE adm_no = $4 AND school_id = $5 AND academic_year = $6
@@ -256,8 +271,39 @@ exports.importFees = async (req, res) => {
           [payableFee, transportFee, concession, admNo, req.user.school_id, academicYear]
         );
 
+        if (updateResult.rows.length === 0 && /^\d+$/.test(admNo)) {
+          // Fallback: try with 'Ns' suffix (common format mismatch from external CSV exports)
+          const admNoWithSuffix = admNo + 'Ns';
+          updateResult = await db.query(
+            `UPDATE students
+             SET payable_fee = $1, transport_fee = $2, concession = $3
+             WHERE adm_no = $4 AND school_id = $5 AND academic_year = $6
+             RETURNING id, class_name`,
+            [payableFee, transportFee, concession, admNoWithSuffix, req.user.school_id, academicYear]
+          );
+          if (updateResult.rows.length > 0) {
+            admNo = admNoWithSuffix; // use the canonical format going forward
+          }
+        }
+
         if (updateResult.rows.length === 0) {
-          errors.push(`${admNo}: student not found for year ${academicYear}. Import students first.`);
+          // Student not found — still log the payment as unlinked so data isn't lost
+          if (paidPast > 0) {
+            const parsedDate = parseCSVDate(rawDate);
+            await db.query(
+              `INSERT INTO fee_ledger
+                 (student_id, receipt_no, amount, payment_mode, notes, collected_by, created_at, school_id, fee_head_id, concession)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+               ON CONFLICT DO NOTHING`,
+              [
+                admNo, receiptNo, paidPast, paymentMode,
+                'Imported from file — unlinked (student not found)', 'Admin', parsedDate,
+                req.user.school_id, 1, concession
+              ]
+            );
+            inserted++;
+          }
+          errors.push(`${admNo}: student not found — payment logged as unlinked.`);
           continue;
         }
 
@@ -733,4 +779,245 @@ exports.downloadFeeTemplate = (req, res) => {
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="fee_import_template.csv"');
   res.status(200).send(csv);
+};
+
+// =============================================================================
+// MANUAL FEE ENTRY — Admin backdates historical payments
+// POST /api/fees/manual-entry
+// =============================================================================
+
+/**
+ * POST /api/fees/manual-entry
+ * Allows admin to manually enter / backfill a historical fee payment.
+ * Body: {
+ *   admission_number, billing_month, payment_date, tuition_amount,
+ *   transport_amount, payment_mode, receipt_no (optional), notes
+ * }
+ */
+exports.manualFeeEntry = async (req, res) => {
+  const {
+    admission_number,
+    billing_month,
+    payment_date,
+    tuition_amount,
+    transport_amount,
+    payment_mode,
+    receipt_no: providedReceiptNo,
+    notes,
+  } = req.body;
+
+  if (!admission_number || !billing_month || !payment_date || !payment_mode) {
+    return res.status(400).json({
+      error: 'Missing required fields: admission_number, billing_month, payment_date, payment_mode',
+    });
+  }
+
+  const parsedTuition   = parseFloat(tuition_amount   || 0) || 0;
+  const parsedTransport = parseFloat(transport_amount || 0) || 0;
+  const totalAmount     = parsedTuition + parsedTransport;
+
+  if (totalAmount <= 0) {
+    return res.status(400).json({ error: 'Total amount must be greater than zero.' });
+  }
+
+  // Validate payment_date
+  const payDate = new Date(payment_date);
+  if (isNaN(payDate.getTime())) {
+    return res.status(400).json({ error: 'Invalid payment_date format. Use YYYY-MM-DD.' });
+  }
+
+  try {
+    // 1. Resolve student
+    let studentResult = await db.query(
+      `SELECT id, name, adm_no, class_name FROM students WHERE adm_no = $1 AND school_id = $2`,
+      [admission_number, req.user.school_id]
+    );
+    // Fallback: try Ns suffix if plain numeric
+    if (studentResult.rows.length === 0 && /^\d+$/.test(admission_number)) {
+      studentResult = await db.query(
+        `SELECT id, name, adm_no, class_name FROM students WHERE adm_no = $1 AND school_id = $2`,
+        [admission_number + 'Ns', req.user.school_id]
+      );
+    }
+    if (studentResult.rows.length === 0) {
+      return res.status(404).json({ error: `Student "${admission_number}" not found.` });
+    }
+
+    const student     = studentResult.rows[0];
+    const receiptNo   = providedReceiptNo?.trim() || `MAN-${Date.now()}`;
+    const academicYear = req.query.academicYear || '2026-2027';
+    const collectedBy = req.user?.username || 'admin';
+
+    const MONTH_INDEX = {
+      'April':1,'May':2,'June':3,'July':4,'August':5,'September':6,
+      'October':7,'November':8,'December':9,'January':10,'February':11,'March':12,
+    };
+    const mIdx = MONTH_INDEX[billing_month];
+    if (!mIdx) {
+      return res.status(400).json({ error: `Invalid billing_month: "${billing_month}". Use full English month name.` });
+    }
+
+    // 2. Upsert monthly dues row so the charge baseline exists
+    await db.query(
+      `INSERT INTO student_monthly_dues
+         (student_adm_no, month_name, month_index, tuition_due, transport_due,
+          tuition_paid, transport_paid, status, academic_year, school_id, paid_at, receipt_no)
+       VALUES ($1, $2, $3, $4, $5, $4, $5, 'PAID', $6, $7, $8, $9)
+       ON CONFLICT (student_adm_no, month_name, academic_year, school_id)
+       DO UPDATE SET
+         tuition_paid   = LEAST(student_monthly_dues.tuition_due,
+                                student_monthly_dues.tuition_paid + $4),
+         transport_paid = LEAST(student_monthly_dues.transport_due,
+                                student_monthly_dues.transport_paid + $5),
+         status = CASE
+           WHEN (student_monthly_dues.tuition_paid + $4 + student_monthly_dues.transport_paid + $5)
+                 >= (student_monthly_dues.tuition_due + student_monthly_dues.transport_due
+                     - student_monthly_dues.concession)
+           THEN 'PAID'
+           WHEN (student_monthly_dues.tuition_paid + $4 + student_monthly_dues.transport_paid + $5) > 0
+           THEN 'PARTIAL'
+           ELSE student_monthly_dues.status
+         END,
+         paid_at   = $8,
+         receipt_no = $9`,
+      [
+        student.adm_no, billing_month, mIdx,
+        parsedTuition, parsedTransport,
+        academicYear, req.user.school_id, payDate, receiptNo,
+      ]
+    );
+
+    // 3. Insert into fee_ledger with the backdated payment_date
+    const ledgerResult = await db.query(
+      `INSERT INTO fee_ledger
+         (receipt_no, student_id, amount, payment_mode, collected_by, status, notes,
+          school_id, fee_head_id, concession, tuition_amount, transport_amount,
+          billing_month, created_at)
+       VALUES ($1, $2, $3, $4, $5, 'Success', $6, $7, 1, 0, $8, $9, $10, $11)
+       ON CONFLICT (receipt_no) DO NOTHING
+       RETURNING *`,
+      [
+        receiptNo, student.adm_no, totalAmount, payment_mode, collectedBy,
+        notes || `Manual entry — ${billing_month}`,
+        req.user.school_id, parsedTuition, parsedTransport, billing_month, payDate,
+      ]
+    );
+
+    // 4. Fetch updated monthly dues for this student
+    const duesResult = await db.query(
+      `SELECT month_name, month_index, tuition_due, transport_due, concession,
+              tuition_paid, transport_paid, status
+       FROM student_monthly_dues
+       WHERE student_adm_no = $1 AND school_id = $2 AND academic_year = $3
+       ORDER BY month_index ASC`,
+      [student.adm_no, req.user.school_id, academicYear]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: `Payment of ₹${totalAmount} recorded for ${student.name} — ${billing_month}`,
+      receipt_no: receiptNo,
+      student: { name: student.name, adm_no: student.adm_no, class_name: student.class_name },
+      ledger: ledgerResult.rows[0] || null,
+      monthly_dues: duesResult.rows,
+    });
+  } catch (error) {
+    logger.error('Error in manual fee entry:', error);
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Receipt number already exists. Use a different one.' });
+    }
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+// =============================================================================
+// GENERATE MONTHLY CHARGES (Cron-ready)
+// POST /api/fees/generate-monthly
+// =============================================================================
+
+/**
+ * POST /api/fees/generate-monthly
+ * Reads class_fee_templates and inserts student_monthly_dues rows for every
+ * active student for the given month. Safe to run multiple times (ON CONFLICT DO NOTHING).
+ * Body: { billing_month (optional, defaults to current month), academic_year (optional) }
+ */
+exports.generateMonthlyCharges = async (req, res) => {
+  const academicYear = req.body?.academic_year || req.query?.academic_year || '2026-2027';
+
+  const MONTH_NAMES = [
+    'April','May','June','July','August','September',
+    'October','November','December','January','February','March',
+  ];
+  const MONTH_INDEX = {};
+  MONTH_NAMES.forEach((m, i) => { MONTH_INDEX[m] = i + 1; });
+
+  // Default to current calendar month mapped to school year
+  let billing_month = req.body?.billing_month || req.query?.billing_month;
+  if (!billing_month) {
+    const now = new Date();
+    billing_month = now.toLocaleString('en-US', { month: 'long' }); // e.g. 'August'
+  }
+  const mIdx = MONTH_INDEX[billing_month];
+  if (!mIdx) {
+    return res.status(400).json({ error: `Invalid billing_month: "${billing_month}"` });
+  }
+
+  try {
+    // Get all active students with their class fee template
+    const studentsResult = await db.query(
+      `SELECT s.adm_no, s.class_name, s.school_id,
+              COALESCE(t.tuition_fee / 12, 0)   AS monthly_tuition,
+              COALESCE(t.transport_fee / 12, 0) AS monthly_transport,
+              COALESCE(t.other_fee / 12, 0)     AS monthly_other
+       FROM students s
+       LEFT JOIN class_fee_templates t
+         ON t.class_name = s.class_name
+         AND t.academic_year = $1
+         AND t.school_id = s.school_id
+       WHERE s.school_id = $2 AND s.academic_year = $1`,
+      [academicYear, req.user.school_id]
+    );
+
+    if (studentsResult.rows.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No students found for this school/year.',
+        created: 0,
+      });
+    }
+
+    let created = 0;
+    let skipped = 0;
+
+    for (const stu of studentsResult.rows) {
+      const mTuition   = Math.round(parseFloat(stu.monthly_tuition)   * 100) / 100;
+      const mTransport = Math.round(parseFloat(stu.monthly_transport) * 100) / 100;
+      const mOther     = Math.round(parseFloat(stu.monthly_other)     * 100) / 100;
+
+      const insertResult = await db.query(
+        `INSERT INTO student_monthly_dues
+           (student_adm_no, month_name, month_index, tuition_due, transport_due,
+            other_due, concession, status, academic_year, school_id)
+         VALUES ($1, $2, $3, $4, $5, $6, 0, 'UNPAID', $7, $8)
+         ON CONFLICT (student_adm_no, month_name, academic_year, school_id) DO NOTHING`,
+        [stu.adm_no, billing_month, mIdx, mTuition, mTransport, mOther, academicYear, stu.school_id]
+      );
+      if (insertResult.rowCount > 0) created++;
+      else skipped++;
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `Monthly charges generated for ${billing_month} ${academicYear}`,
+      billing_month,
+      academic_year: academicYear,
+      total_students: studentsResult.rows.length,
+      created,
+      skipped_existing: skipped,
+    });
+  } catch (error) {
+    logger.error('Error generating monthly charges:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 };

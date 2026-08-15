@@ -3,7 +3,8 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, BookOpen, Settings, MessageSquare, 
   IndianRupee, Sliders, Monitor, User, HeadphonesIcon, 
-  HelpCircle, MessageCircle, FileText, ShoppingCart, Database
+  HelpCircle, MessageCircle, FileText, ShoppingCart, Database,
+  ClipboardList
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, closeSidebar }) => {
@@ -14,6 +15,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
     { name: 'Communication', path: '/communication', icon: MessageSquare },
     { name: 'Financial', path: '/fees/dashboard', icon: IndianRupee },
     { name: 'Fee Structure Setup', path: '/fees/setup', icon: Sliders },
+    { name: 'Manual Fee Entry', path: '/fees/manual-entry', icon: ClipboardList },
     { name: 'Data Management', path: '/data', icon: Database },
     { name: 'Setup Your School', path: '/setup', icon: Sliders },
     { name: 'Website Builder', path: '/website', icon: Monitor },
