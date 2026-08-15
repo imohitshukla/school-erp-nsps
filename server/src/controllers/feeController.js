@@ -388,7 +388,7 @@ exports.importFees = async (req, res) => {
     if (bDuesIn.adm.length > 0) {
       await db.query(`
         INSERT INTO student_monthly_dues (student_adm_no, month_name, month_index, tuition_due, transport_due, other_due, concession, academic_year, school_id)
-        SELECT * FROM UNNEST($1::text[], $2::text[], $3::integer[], $4::numeric[], $5::numeric[], $6::integer[], $7::numeric[], $8::text[], $9::integer[])
+        SELECT * FROM UNNEST($1::text[], $2::text[], $3::integer[], $4::numeric[], $5::numeric[], $6::numeric[], $7::numeric[], $8::text[], $9::integer[])
         ON CONFLICT (student_adm_no, month_name, academic_year, school_id)
         DO UPDATE SET
           tuition_due = EXCLUDED.tuition_due,
@@ -400,7 +400,7 @@ exports.importFees = async (req, res) => {
     if (bLedger.stId.length > 0) {
       await db.query(`
         INSERT INTO fee_ledger (student_id, receipt_no, amount, payment_mode, notes, collected_by, created_at, school_id, fee_head_id, concession)
-        SELECT * FROM UNNEST($1::text[], $2::text[], $3::numeric[], $4::text[], $5::text[], $6::text[], $7::timestamp[], $8::integer[], $9::integer[], $10::numeric[])
+        SELECT * FROM UNNEST($1::text[], $2::text[], $3::numeric[], $4::text[], $5::text[], $6::text[], $7::timestamptz[], $8::integer[], $9::integer[], $10::numeric[])
         ON CONFLICT DO NOTHING
       `, [bLedger.stId, bLedger.rec, bLedger.amt, bLedger.mode, bLedger.note, bLedger.by, bLedger.date, bLedger.sch, bLedger.head, bLedger.conc]);
     }
