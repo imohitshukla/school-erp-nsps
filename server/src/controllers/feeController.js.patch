@@ -1,0 +1,16 @@
+--- server/src/controllers/feeController.js
++++ server/src/controllers/feeController.js
+@@ -174,10 +174,6 @@
+ }
+ 
+ exports.importFees = async (req, res) => {
+   if (!req.file) {
+     return res.status(400).json({ error: 'No file uploaded' });
+   }
+ 
+   const academicYear = req.body.academicYear || '2026-2027';
+   const schoolId = req.user.school_id;
+   const errors = [];
+   let inserted = 0;
+ 
+   try {
