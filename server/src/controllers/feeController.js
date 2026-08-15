@@ -380,7 +380,7 @@ exports.importFees = async (req, res) => {
     if (bStu.id.length > 0) {
       await db.query(`
         UPDATE students SET payable_fee = u.pf, transport_fee = u.tf, concession = u.c
-        FROM UNNEST($1::uuid[], $2::numeric[], $3::numeric[], $4::numeric[]) AS u(id, pf, tf, c)
+        FROM UNNEST($1::integer[], $2::numeric[], $3::numeric[], $4::numeric[]) AS u(id, pf, tf, c)
         WHERE students.id = u.id
       `, [bStu.id, bStu.pFee, bStu.tFee, bStu.conc]);
     }
@@ -388,7 +388,7 @@ exports.importFees = async (req, res) => {
     if (bDuesIn.adm.length > 0) {
       await db.query(`
         INSERT INTO student_monthly_dues (student_adm_no, month_name, month_index, tuition_due, transport_due, other_due, concession, academic_year, school_id)
-        SELECT * FROM UNNEST($1::text[], $2::text[], $3::integer[], $4::numeric[], $5::numeric[], $6::integer[], $7::numeric[], $8::text[], $9::uuid[])
+        SELECT * FROM UNNEST($1::text[], $2::text[], $3::integer[], $4::numeric[], $5::numeric[], $6::integer[], $7::numeric[], $8::text[], $9::integer[])
         ON CONFLICT (student_adm_no, month_name, academic_year, school_id)
         DO UPDATE SET
           tuition_due = EXCLUDED.tuition_due,
@@ -400,7 +400,7 @@ exports.importFees = async (req, res) => {
     if (bLedger.stId.length > 0) {
       await db.query(`
         INSERT INTO fee_ledger (student_id, receipt_no, amount, payment_mode, notes, collected_by, created_at, school_id, fee_head_id, concession)
-        SELECT * FROM UNNEST($1::text[], $2::text[], $3::numeric[], $4::text[], $5::text[], $6::text[], $7::timestamp[], $8::uuid[], $9::integer[], $10::numeric[])
+        SELECT * FROM UNNEST($1::text[], $2::text[], $3::numeric[], $4::text[], $5::text[], $6::text[], $7::timestamp[], $8::integer[], $9::integer[], $10::numeric[])
         ON CONFLICT DO NOTHING
       `, [bLedger.stId, bLedger.rec, bLedger.amt, bLedger.mode, bLedger.note, bLedger.by, bLedger.date, bLedger.sch, bLedger.head, bLedger.conc]);
     }
@@ -417,7 +417,7 @@ exports.importFees = async (req, res) => {
             END,
             paid_at = NOW(),
             receipt_no = u.rec
-        FROM UNNEST($1::text[], $2::text[], $3::numeric[], $4::numeric[], $5::text[], $6::uuid[], $7::text[]) AS u(adm, month, tp, pp, rec, sch, yr)
+        FROM UNNEST($1::text[], $2::text[], $3::numeric[], $4::numeric[], $5::text[], $6::integer[], $7::text[]) AS u(adm, month, tp, pp, rec, sch, yr)
         WHERE student_monthly_dues.student_adm_no = u.adm
           AND student_monthly_dues.month_name = u.month
           AND student_monthly_dues.school_id = u.sch
