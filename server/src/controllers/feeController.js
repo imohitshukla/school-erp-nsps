@@ -247,47 +247,98 @@ exports.importFees = async (req, res) => {
       });
     }
 
-    for (const row of rows) {
-      let admNo = (row[admKey] || '').toString().trim();
-      if (!admNo) continue;
+    // Process rows concurrently in chunks to massively speed up DB operations
+    const CHUNK_SIZE = 10;
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + CHUNK_SIZE);
+      
+      await Promise.all(chunk.map(async (row) => {
+        let admNo = (row[admKey] || '').toString().trim();
+        if (!admNo) return;
 
-      const payableFee   = parseFloat(row[payableKey]   || 0) || 0;
-      const transportFee = parseFloat(row[transportKey] || 0) || 0;
-      const paidPast     = parseFloat(row[paidKey]      || 0) || 0;
-      const concession   = parseFloat(row[concessionKey]|| 0) || 0;
-      const paymentMode  = (row[modeKey] || 'Cash').toString().trim() || 'Cash';
-      const rawDate      = dateKey ? row[dateKey] : null;
-      const receiptNo    = (row[receiptKey] || '').toString().trim()
-                          || `FEE-IMP-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
+        const payableFee   = parseFloat(row[payableKey]   || 0) || 0;
+        const transportFee = parseFloat(row[transportKey] || 0) || 0;
+        const paidPast     = parseFloat(row[paidKey]      || 0) || 0;
+        const concession   = parseFloat(row[concessionKey]|| 0) || 0;
+        const paymentMode  = (row[modeKey] || 'Cash').toString().trim() || 'Cash';
+        const rawDate      = dateKey ? row[dateKey] : null;
+        const receiptNo    = (row[receiptKey] || '').toString().trim()
+                            || `FEE-IMP-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
 
-      try {
-        // Step 1: update student fee structure and get student DB id
-        // Try exact adm_no first; if purely numeric and no match, try appending 'Ns'
-        let updateResult = await db.query(
-          `UPDATE students
-           SET payable_fee = $1, transport_fee = $2, concession = $3
-           WHERE adm_no = $4 AND school_id = $5 AND academic_year = $6
-           RETURNING id, class_name`,
-          [payableFee, transportFee, concession, admNo, req.user.school_id, academicYear]
-        );
-
-        if (updateResult.rows.length === 0 && /^\d+$/.test(admNo)) {
-          // Fallback: try with 'Ns' suffix (common format mismatch from external CSV exports)
-          const admNoWithSuffix = admNo + 'Ns';
-          updateResult = await db.query(
+        try {
+          // Step 1: update student fee structure and get student DB id
+          // Try exact adm_no first; if purely numeric and no match, try appending 'Ns'
+          let updateResult = await db.query(
             `UPDATE students
              SET payable_fee = $1, transport_fee = $2, concession = $3
              WHERE adm_no = $4 AND school_id = $5 AND academic_year = $6
              RETURNING id, class_name`,
-            [payableFee, transportFee, concession, admNoWithSuffix, req.user.school_id, academicYear]
+            [payableFee, transportFee, concession, admNo, req.user.school_id, academicYear]
           );
-          if (updateResult.rows.length > 0) {
-            admNo = admNoWithSuffix; // use the canonical format going forward
-          }
-        }
 
-        if (updateResult.rows.length === 0) {
-          // Student not found — still log the payment as unlinked so data isn't lost
+          if (updateResult.rows.length === 0 && /^\d+$/.test(admNo)) {
+            // Fallback: try with 'Ns' suffix (common format mismatch from external CSV exports)
+            const admNoWithSuffix = admNo + 'Ns';
+            updateResult = await db.query(
+              `UPDATE students
+               SET payable_fee = $1, transport_fee = $2, concession = $3
+               WHERE adm_no = $4 AND school_id = $5 AND academic_year = $6
+               RETURNING id, class_name`,
+              [payableFee, transportFee, concession, admNoWithSuffix, req.user.school_id, academicYear]
+            );
+            if (updateResult.rows.length > 0) {
+              admNo = admNoWithSuffix; // use the canonical format going forward
+            }
+          }
+
+          if (updateResult.rows.length === 0) {
+            // Student not found — still log the payment as unlinked so data isn't lost
+            if (paidPast > 0) {
+              const parsedDate = parseCSVDate(rawDate);
+              await db.query(
+                `INSERT INTO fee_ledger
+                   (student_id, receipt_no, amount, payment_mode, notes, collected_by, created_at, school_id, fee_head_id, concession)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                 ON CONFLICT DO NOTHING`,
+                [
+                  admNo, receiptNo, paidPast, paymentMode,
+                  'Imported from file — unlinked (student not found)', 'Admin', parsedDate,
+                  req.user.school_id, 1, concession
+                ]
+              );
+              inserted++;
+            }
+            errors.push(`${admNo}: student not found — payment logged as unlinked.`);
+            return;
+          }
+
+          const studentDbId = updateResult.rows[0].id;
+
+          // Step 1b: Upsert 12 monthly due rows in student_monthly_dues (Run concurrently)
+          const MONTH_NAMES = [
+            'April', 'May', 'June', 'July', 'August', 'September', 
+            'October', 'November', 'December', 'January', 'February', 'March'
+          ];
+          const mTuition = Math.round((payableFee / 12) * 100) / 100;
+          const mTransport = Math.round((transportFee / 12) * 100) / 100;
+          const mConcession = Math.round((concession / 12) * 100) / 100;
+          const mNetDue = mTuition + mTransport - mConcession;
+
+          await Promise.all(MONTH_NAMES.map((monthName, idx) => {
+            return db.query(
+              `INSERT INTO student_monthly_dues
+                (student_adm_no, month_name, month_index, tuition_due, transport_due, other_due, concession, academic_year, school_id)
+               VALUES ($1, $2, $3, $4, $5, 0, $6, $7, $8)
+               ON CONFLICT (student_adm_no, month_name, academic_year, school_id)
+               DO UPDATE SET
+                 tuition_due = EXCLUDED.tuition_due,
+                 transport_due = EXCLUDED.transport_due,
+                 concession = EXCLUDED.concession`,
+              [admNo, monthName, idx + 1, mTuition, mTransport, mConcession, academicYear, req.user.school_id]
+            );
+          }));
+
+          // Step 2: log past payment in ledger if paidPast > 0 and distribute across monthly dues
           if (paidPast > 0) {
             const parsedDate = parseCSVDate(rawDate);
             await db.query(
@@ -296,93 +347,54 @@ exports.importFees = async (req, res) => {
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                ON CONFLICT DO NOTHING`,
               [
-                admNo, receiptNo, paidPast, paymentMode,
-                'Imported from file — unlinked (student not found)', 'Admin', parsedDate,
+                studentDbId, receiptNo, paidPast, paymentMode,
+                'Imported from file', 'Admin', parsedDate,
                 req.user.school_id, 1, concession
               ]
             );
-            inserted++;
-          }
-          errors.push(`${admNo}: student not found — payment logged as unlinked.`);
-          continue;
-        }
 
-        const studentDbId = updateResult.rows[0].id;
+            // Distribute paidPast across months April -> March
+            let remainingPayment = paidPast;
+            const updatePromises = [];
+            
+            for (let idx = 0; idx < 12; idx++) {
+              if (remainingPayment <= 0) break;
+              const monthName = MONTH_NAMES[idx];
 
-        // Step 1b: Upsert 12 monthly due rows in student_monthly_dues
-        const MONTH_NAMES = [
-          'April', 'May', 'June', 'July', 'August', 'September', 
-          'October', 'November', 'December', 'January', 'February', 'March'
-        ];
-        const mTuition = Math.round((payableFee / 12) * 100) / 100;
-        const mTransport = Math.round((transportFee / 12) * 100) / 100;
-        const mConcession = Math.round((concession / 12) * 100) / 100;
-        const mNetDue = mTuition + mTransport - mConcession;
+              const payForThisMonth = Math.min(remainingPayment, mNetDue > 0 ? mNetDue : 0);
+              if (payForThisMonth > 0) {
+                const tuitionPortion = mTuition > 0 ? Math.min(payForThisMonth, mTuition) : 0;
+                const transportPortion = Math.max(0, payForThisMonth - tuitionPortion);
 
-        for (let idx = 0; idx < 12; idx++) {
-          await db.query(
-            `INSERT INTO student_monthly_dues
-              (student_adm_no, month_name, month_index, tuition_due, transport_due, other_due, concession, academic_year, school_id)
-             VALUES ($1, $2, $3, $4, $5, 0, $6, $7, $8)
-             ON CONFLICT (student_adm_no, month_name, academic_year, school_id)
-             DO UPDATE SET
-               tuition_due = EXCLUDED.tuition_due,
-               transport_due = EXCLUDED.transport_due,
-               concession = EXCLUDED.concession`,
-            [admNo, MONTH_NAMES[idx], idx + 1, mTuition, mTransport, mConcession, academicYear, req.user.school_id]
-          );
-        }
+                updatePromises.push(db.query(
+                  `UPDATE student_monthly_dues
+                   SET tuition_paid = LEAST(tuition_due, tuition_paid + $1),
+                       transport_paid = LEAST(transport_due, transport_paid + $2),
+                       status = CASE
+                         WHEN (tuition_paid + $1 + transport_paid + $2) >= (tuition_due + transport_due - concession) THEN 'PAID'
+                         WHEN (tuition_paid + $1 + transport_paid + $2) > 0 THEN 'PARTIAL'
+                         ELSE status
+                       END,
+                       paid_at = NOW(),
+                       receipt_no = $3
+                   WHERE student_adm_no = $4 AND month_name = $5 AND school_id = $6 AND academic_year = $7`,
+                  [tuitionPortion, transportPortion, receiptNo, admNo, monthName, req.user.school_id, academicYear]
+                ));
 
-        // Step 2: log past payment in ledger if paidPast > 0 and distribute across monthly dues
-        if (paidPast > 0) {
-          const parsedDate = parseCSVDate(rawDate);
-          await db.query(
-            `INSERT INTO fee_ledger
-               (student_id, receipt_no, amount, payment_mode, notes, collected_by, created_at, school_id, fee_head_id, concession)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-             ON CONFLICT DO NOTHING`,
-            [
-              studentDbId, receiptNo, paidPast, paymentMode,
-              'Imported from file', 'Admin', parsedDate,
-              req.user.school_id, 1, concession
-            ]
-          );
-
-          // Distribute paidPast across months April -> March
-          let remainingPayment = paidPast;
-          for (let idx = 0; idx < 12; idx++) {
-            if (remainingPayment <= 0) break;
-            const monthName = MONTH_NAMES[idx];
-
-            const payForThisMonth = Math.min(remainingPayment, mNetDue > 0 ? mNetDue : 0);
-            if (payForThisMonth > 0) {
-              const tuitionPortion = mTuition > 0 ? Math.min(payForThisMonth, mTuition) : 0;
-              const transportPortion = Math.max(0, payForThisMonth - tuitionPortion);
-
-              await db.query(
-                `UPDATE student_monthly_dues
-                 SET tuition_paid = LEAST(tuition_due, tuition_paid + $1),
-                     transport_paid = LEAST(transport_due, transport_paid + $2),
-                     status = CASE
-                       WHEN (tuition_paid + $1 + transport_paid + $2) >= (tuition_due + transport_due - concession) THEN 'PAID'
-                       WHEN (tuition_paid + $1 + transport_paid + $2) > 0 THEN 'PARTIAL'
-                       ELSE status
-                     END,
-                     paid_at = NOW(),
-                     receipt_no = $3
-                 WHERE student_adm_no = $4 AND month_name = $5 AND school_id = $6 AND academic_year = $7`,
-                [tuitionPortion, transportPortion, receiptNo, admNo, monthName, req.user.school_id, academicYear]
-              );
-
-              remainingPayment -= payForThisMonth;
+                remainingPayment -= payForThisMonth;
+              }
+            }
+            
+            if (updatePromises.length > 0) {
+              await Promise.all(updatePromises);
             }
           }
-        }
 
-        inserted++;
-      } catch (dbErr) {
-        errors.push(`Row [${admNo}]: ${dbErr.message}`);
-      }
+          inserted++;
+        } catch (dbErr) {
+          errors.push(`Row [${admNo}]: ${dbErr.message}`);
+        }
+      }));
     }
 
     res.status(200).json({
