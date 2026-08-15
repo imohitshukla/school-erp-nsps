@@ -263,11 +263,11 @@ exports.importFees = async (req, res) => {
       }
     });
 
-    // Bulk arrays
-    const bStu = { id: [], pFee: [], tFee: [], conc: [] };
+    // We will aggregate everything to prevent duplicates which crash UNNEST queries
+    const studentUpdateMap = {}; // id -> { pf, tf, c }
+    const duesInsertMap = {};    // admNo_month -> { adm, month, idx, tDue, pDue, conc, yr, sch }
+    const duesUpdateMap = {};    // admNo_month -> { tp, pp, rec }
     const bLedger = { stId: [], rec: [], amt: [], mode: [], note: [], by: [], date: [], sch: [], head: [], conc: [] };
-    const bDuesIn = { adm: [], month: [], idx: [], tDue: [], pDue: [], conc: [], yr: [], sch: [] };
-    const bDuesUp = { adm: [], month: [], tPaid: [], pPaid: [], rec: [], sch: [], yr: [] };
 
     const MONTH_NAMES = [
       'April', 'May', 'June', 'July', 'August', 'September', 
@@ -316,25 +316,25 @@ exports.importFees = async (req, res) => {
       // Valid student
       const admNo = student.adm_no;
       
-      bStu.id.push(student.id);
-      bStu.pFee.push(payableFee);
-      bStu.tFee.push(transportFee);
-      bStu.conc.push(concession);
+      // Keep last seen fee structure
+      studentUpdateMap[student.id] = { pFee: payableFee, tFee: transportFee, conc: concession };
 
       const mTuition = Math.round((payableFee / 12) * 100) / 100;
       const mTransport = Math.round((transportFee / 12) * 100) / 100;
       const mConcession = Math.round((concession / 12) * 100) / 100;
       const mNetDue = mTuition + mTransport - mConcession;
 
+      // Ensure 12 month entries exist for this student
       for (let idx = 0; idx < 12; idx++) {
-        bDuesIn.adm.push(admNo);
-        bDuesIn.month.push(MONTH_NAMES[idx]);
-        bDuesIn.idx.push(idx + 1);
-        bDuesIn.tDue.push(mTuition);
-        bDuesIn.pDue.push(mTransport);
-        bDuesIn.conc.push(mConcession);
-        bDuesIn.yr.push(academicYear);
-        bDuesIn.sch.push(req.user.school_id);
+        const monthName = MONTH_NAMES[idx];
+        const key = `${admNo}_${monthName}`;
+        if (!duesInsertMap[key]) {
+          duesInsertMap[key] = {
+            adm: admNo, month: monthName, idx: idx + 1,
+            tDue: mTuition, pDue: mTransport, conc: mConcession,
+            yr: academicYear, sch: req.user.school_id
+          };
+        }
       }
 
       if (paidPast > 0) {
@@ -353,27 +353,46 @@ exports.importFees = async (req, res) => {
         for (let idx = 0; idx < 12; idx++) {
           if (remainingPayment <= 0) break;
           const monthName = MONTH_NAMES[idx];
+          const key = `${admNo}_${monthName}`;
 
           const payForThisMonth = Math.min(remainingPayment, mNetDue > 0 ? mNetDue : 0);
           if (payForThisMonth > 0) {
             const tuitionPortion = mTuition > 0 ? Math.min(payForThisMonth, mTuition) : 0;
             const transportPortion = Math.max(0, payForThisMonth - tuitionPortion);
 
-            bDuesUp.tuition_paid = tuitionPortion;
-            
-            bDuesUp.adm.push(admNo);
-            bDuesUp.month.push(monthName);
-            bDuesUp.tPaid.push(tuitionPortion);
-            bDuesUp.pPaid.push(transportPortion);
-            bDuesUp.rec.push(receiptNo);
-            bDuesUp.sch.push(req.user.school_id);
-            bDuesUp.yr.push(academicYear);
+            if (!duesUpdateMap[key]) {
+               duesUpdateMap[key] = { tp: 0, pp: 0, rec: receiptNo };
+            }
+            duesUpdateMap[key].tp += tuitionPortion;
+            duesUpdateMap[key].pp += transportPortion;
+            duesUpdateMap[key].rec = receiptNo;
 
             remainingPayment -= payForThisMonth;
           }
         }
       }
       inserted++;
+    }
+
+    // Convert aggregated maps to bulk arrays
+    const bStu = { id: [], pFee: [], tFee: [], conc: [] };
+    for (const [id, data] of Object.entries(studentUpdateMap)) {
+      bStu.id.push(id); bStu.pFee.push(data.pFee); bStu.tFee.push(data.tFee); bStu.conc.push(data.conc);
+    }
+
+    const bDuesIn = { adm: [], month: [], idx: [], tDue: [], pDue: [], conc: [], yr: [], sch: [] };
+    for (const data of Object.values(duesInsertMap)) {
+      bDuesIn.adm.push(data.adm); bDuesIn.month.push(data.month); bDuesIn.idx.push(data.idx);
+      bDuesIn.tDue.push(data.tDue); bDuesIn.pDue.push(data.pDue); bDuesIn.conc.push(data.conc);
+      bDuesIn.yr.push(data.yr); bDuesIn.sch.push(data.sch);
+    }
+
+    const bDuesUp = { adm: [], month: [], tPaid: [], pPaid: [], rec: [], sch: [], yr: [] };
+    for (const [key, data] of Object.entries(duesUpdateMap)) {
+      const [adm, month] = key.split('_');
+      bDuesUp.adm.push(adm); bDuesUp.month.push(month);
+      bDuesUp.tPaid.push(data.tp); bDuesUp.pPaid.push(data.pp); bDuesUp.rec.push(data.rec);
+      bDuesUp.sch.push(req.user.school_id); bDuesUp.yr.push(academicYear);
     }
 
     // Execute bulk queries using UNNEST
@@ -433,7 +452,7 @@ exports.importFees = async (req, res) => {
   } catch (err) {
     try { if (req.file?.path) fs.unlinkSync(req.file.path); } catch (_) {}
     console.error('Error importing fees:', err);
-    res.status(500).json({ error: 'Internal server error during fee import.' });
+    res.status(500).json({ error: 'Internal server error during fee import: ' + err.message });
   }
 };
 
