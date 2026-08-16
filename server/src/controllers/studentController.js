@@ -65,8 +65,38 @@ exports.getStudentByAdmNo = async (req, res) => {
       [admNo, req.user.school_id, year]
     );
 
-    // Calculate summary from monthly dues
-    const monthlyDues = duesResult.rows;
+    let monthlyDues = duesResult.rows;
+
+    // ── AUTO-CREATE Admission row (one-time annual charge) ──────────────
+    // If there's no row with month_index = 0, insert it automatically
+    // using the student's payable_fee as the one-time charge amount.
+    const hasAdmissionRow = monthlyDues.some(m => m.month_index === 0 || m.month_name === 'Admission');
+    const payableFee = parseFloat(student.payable_fee || 0);
+    if (!hasAdmissionRow && payableFee > 0 && monthlyDues.length > 0) {
+      // Use concession proportionally — annual concession / 12 * n months
+      const annualConcession = parseFloat(student.concession || 0);
+      try {
+        await db.query(
+          `INSERT INTO student_monthly_dues 
+             (student_adm_no, month_name, month_index, tuition_due, transport_due, other_due, concession, academic_year, school_id)
+           VALUES ($1, 'Admission', 0, $2, 0, 0, $3, $4, $5)
+           ON CONFLICT DO NOTHING`,
+          [admNo, payableFee, 0, year, req.user.school_id]
+        );
+        // Re-fetch after insert
+        const refreshed = await db.query(
+          `SELECT * FROM student_monthly_dues 
+           WHERE student_adm_no = $1 AND school_id = $2 AND academic_year = $3
+           ORDER BY month_index ASC`,
+          [admNo, req.user.school_id, year]
+        );
+        monthlyDues = refreshed.rows;
+      } catch (insertErr) {
+        // Non-fatal: admission row may already exist due to race condition
+        console.warn('Admission row insert skipped:', insertErr.message);
+      }
+    }
+
     const totalDue = monthlyDues.reduce((sum, m) => sum + parseFloat(m.tuition_due || 0) + parseFloat(m.transport_due || 0) + parseFloat(m.other_due || 0) - parseFloat(m.concession || 0), 0);
     const totalPaid = monthlyDues.reduce((sum, m) => sum + parseFloat(m.tuition_paid || 0) + parseFloat(m.transport_paid || 0) + parseFloat(m.other_paid || 0), 0);
 
