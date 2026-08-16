@@ -290,12 +290,12 @@ const Dashboard = () => {
         <KpiCard title="Active Students" value={stats.totalActive} icon={<UserCheck className="text-green-500" size={32} />} borderColor="border-green-400" titleColor="text-blue-600" />
         <KpiCard title="Old Students" value={stats.totalOld} icon={<div className="bg-yellow-400 text-white text-xs font-bold px-2 py-1 rounded transform -rotate-12">OLD</div>} borderColor="border-yellow-400" titleColor="text-blue-600" />
         <KpiCard title="Male Student" value={stats.totalMale} icon={<UserCheck className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" />
-        <KpiCard title="Boarding" value="0" icon={<Shield className="text-gray-800" size={32} />} borderColor="border-gray-300" titleColor="text-blue-600" />
+        <KpiCard title="Boarding" value={stats.totalBoarding || 0} icon={<Shield className="text-gray-800" size={32} />} borderColor="border-gray-300" titleColor="text-blue-600" />
         
-        <KpiCard title="InActive Students" value="0" icon={<UserCheck className="text-red-500" size={32} />} borderColor="border-red-400" titleColor="text-blue-600" />
-        <KpiCard title="New Students" value={stats.totalActive} icon={<div className="bg-cyan-400 text-white text-xs font-bold px-2 py-1 rounded transform -rotate-12">NEW</div>} borderColor="border-cyan-400" titleColor="text-blue-600" />
+        <KpiCard title="InActive Students" value={stats.totalInactive || 0} icon={<UserCheck className="text-red-500" size={32} />} borderColor="border-red-400" titleColor="text-blue-600" />
+        <KpiCard title="New Students" value={stats.totalNew || stats.totalActive} icon={<div className="bg-cyan-400 text-white text-xs font-bold px-2 py-1 rounded transform -rotate-12">NEW</div>} borderColor="border-cyan-400" titleColor="text-blue-600" />
         <KpiCard title="Female Student" value={stats.totalFemale} icon={<UserCheck className="text-pink-500" size={32} />} borderColor="border-pink-400" titleColor="text-blue-600" />
-        <KpiCard title="Transport" value="0" icon={<Shield className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" />
+        <KpiCard title="Transport" value={stats.totalTransport || 0} icon={<Shield className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" />
       </div>
 
       {/* Chart Section */}

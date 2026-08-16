@@ -127,21 +127,32 @@ exports.getStudentStats = async (req, res) => {
 
     const genderStatsResult = await db.query(`
       SELECT 
-        SUM(CASE WHEN LOWER(gender) IN ('male', 'm') THEN 1 ELSE 0 END) as total_male,
-        SUM(CASE WHEN LOWER(gender) IN ('female', 'f') THEN 1 ELSE 0 END) as total_female
+        SUM(CASE WHEN LOWER(gender) IN ('male', 'm', 'boy') THEN 1 ELSE 0 END) as total_male,
+        SUM(CASE WHEN LOWER(gender) IN ('female', 'f', 'girl') THEN 1 ELSE 0 END) as total_female,
+        SUM(CASE WHEN transport_fee > 0 THEN 1 ELSE 0 END) as total_transport,
+        SUM(CASE WHEN status = 'INACTIVE' THEN 1 ELSE 0 END) as total_inactive,
+        SUM(CASE WHEN status = 'ACTIVE' OR status IS NULL THEN 1 ELSE 0 END) as total_active
       FROM students 
       WHERE school_id = $1
     `, [req.user.school_id]);
 
-    const totalMale = parseInt(genderStatsResult.rows[0].total_male) || 0;
-    const totalFemale = parseInt(genderStatsResult.rows[0].total_female) || 0;
+    const statsRow = genderStatsResult.rows[0];
+    const totalMale = parseInt(statsRow.total_male) || 0;
+    const totalFemale = parseInt(statsRow.total_female) || 0;
+    const totalTransport = parseInt(statsRow.total_transport) || 0;
+    const totalInactive = parseInt(statsRow.total_inactive) || 0;
+    const totalActive = parseInt(statsRow.total_active) || 0;
 
     res.status(200).json({
       data: {
-        totalActive: totalStudents,
+        totalActive,
+        totalInactive,
         totalOld: 0,
+        totalNew: totalStudents, // default to new for now
         totalMale,
         totalFemale,
+        totalTransport,
+        totalBoarding: 0,
         classStats: classStatsResult.rows
       }
     });
@@ -222,7 +233,7 @@ function detectColumns(headers) {
   const nameIdx  = find('name', 'studentname', 'fullname');
   const classIdx = find('class', 'classname', 'grade', 'std', 'standard');
   const fatherIdx = find('father', 'fathername', 'parentname');
-  const genderIdx = find('gender', 'sex');
+  const genderIdx = find('gender', 'sex', 'm/f', 'boy/girl');
 
   return { admIdx, nameIdx, classIdx, fatherIdx, genderIdx };
 }
