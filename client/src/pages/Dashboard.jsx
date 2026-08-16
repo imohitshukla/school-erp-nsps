@@ -1,13 +1,145 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Users, UserCheck, Shield, Users as UsersIcon, Settings, Download, Upload, Menu 
+  Users, UserCheck, Shield, Users as UsersIcon, Settings, Download, Upload, Menu,
+  CheckCircle, AlertTriangle, XCircle, X, ChevronRight
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import { useAppContext } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
 
+/* ─── Beautiful Import Result Modal ─────────────────────────────────────── */
+const ImportModal = ({ result, onClose }) => {
+  if (!result) return null;
+
+  const isSuccess = result.type === 'success';
+  const isError = result.type === 'error';
+  const isWarning = result.type === 'warning';
+
+  const config = {
+    success: {
+      icon: <CheckCircle size={48} className="text-emerald-500" />,
+      bg: 'from-emerald-50 to-white',
+      border: 'border-emerald-200',
+      titleColor: 'text-emerald-700',
+      badge: 'bg-emerald-100 text-emerald-700',
+      title: 'Import Successful!',
+    },
+    warning: {
+      icon: <AlertTriangle size={48} className="text-amber-500" />,
+      bg: 'from-amber-50 to-white',
+      border: 'border-amber-200',
+      titleColor: 'text-amber-700',
+      badge: 'bg-amber-100 text-amber-700',
+      title: 'Import Done with Warnings',
+    },
+    error: {
+      icon: <XCircle size={48} className="text-rose-500" />,
+      bg: 'from-rose-50 to-white',
+      border: 'border-rose-200',
+      titleColor: 'text-rose-700',
+      badge: 'bg-rose-100 text-rose-700',
+      title: 'Import Failed',
+    },
+  };
+
+  const c = config[result.type] || config.success;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(4px)' }}>
+      <div className={`relative bg-gradient-to-b ${c.bg} rounded-2xl shadow-2xl border ${c.border} w-full max-w-md overflow-hidden`}
+        style={{ animation: 'modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+        
+        {/* Close button */}
+        <button onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-black/10 transition-colors text-gray-500">
+          <X size={18} />
+        </button>
+
+        {/* Icon + Title */}
+        <div className="flex flex-col items-center pt-8 pb-4 px-8 text-center">
+          <div className="mb-4" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.12))' }}>
+            {c.icon}
+          </div>
+          <h3 className={`text-xl font-bold ${c.titleColor}`}>{c.title}</h3>
+        </div>
+
+        {/* Stats */}
+        {result.count !== undefined && (
+          <div className="flex justify-center px-8 pb-4">
+            <div className={`${c.badge} rounded-full px-5 py-1.5 text-sm font-semibold`}>
+              {result.count} records processed
+            </div>
+          </div>
+        )}
+
+        {/* Main message */}
+        <div className="px-8 pb-4">
+          <p className="text-gray-700 text-sm text-center leading-relaxed">{result.message}</p>
+        </div>
+
+        {/* Warnings */}
+        {result.warnings?.length > 0 && (
+          <div className="mx-6 mb-4 rounded-xl bg-amber-50 border border-amber-200 p-3">
+            <p className="text-xs font-bold text-amber-700 mb-2 flex items-center gap-1.5">
+              <AlertTriangle size={13} /> {result.warnings.length} Warning{result.warnings.length > 1 ? 's' : ''}
+            </p>
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {result.warnings.map((w, i) => (
+                <div key={i} className="text-xs text-amber-800 bg-white rounded-lg px-2.5 py-1.5 border border-amber-100 font-mono">
+                  {w}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Errors */}
+        {result.errors?.length > 0 && (
+          <div className="mx-6 mb-4 rounded-xl bg-rose-50 border border-rose-200 p-3">
+            <p className="text-xs font-bold text-rose-700 mb-2 flex items-center gap-1.5">
+              <XCircle size={13} /> {result.errors.length} Error{result.errors.length > 1 ? 's' : ''}
+            </p>
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {result.errors.map((e, i) => (
+                <div key={i} className="text-xs text-rose-800 bg-white rounded-lg px-2.5 py-1.5 border border-rose-100 font-mono">
+                  {e}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 px-6 pb-6 pt-2">
+          <button onClick={onClose}
+            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl text-sm transition-colors">
+            Close
+          </button>
+          {result.type !== 'error' && (
+            <button onClick={onClose}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-1">
+              Done <ChevronRight size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes modalPop {
+          from { opacity: 0; transform: scale(0.88) translateY(12px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+/* ─── Dashboard Component ────────────────────────────────────────────────── */
 const Dashboard = () => {
   const { selectedAcademicYear } = useAppContext();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalActive: 0,
     totalOld: 0,
@@ -20,6 +152,9 @@ const Dashboard = () => {
   const [feeUploading, setFeeUploading] = useState(false);
   const fileInputRef = useRef(null);
   const feeFileInputRef = useRef(null);
+
+  // Modal state
+  const [importModal, setImportModal] = useState(null);
 
   const fetchStats = async () => {
     try {
@@ -47,12 +182,18 @@ const Dashboard = () => {
     setUploading(true);
     try {
       const response = await api.postForm('/api/students/import', formData);
-      const errSummary = response.errors?.length > 0 ? `\n\nWarnings:\n${response.errors.slice(0, 3).join('\n')}` : '';
-      alert(`✅ Student Import Done!\nAdded/Updated: ${response.insertedCount} students.${errSummary}`);
+      const warnings = response.errors?.slice(0, 10) || [];
+      setImportModal({
+        type: warnings.length > 0 ? 'warning' : 'success',
+        title: 'Student Import Done!',
+        message: `Successfully added/updated ${response.insertedCount} students.`,
+        count: response.insertedCount,
+        warnings,
+      });
       fetchStats();
     } catch (error) {
       const msg = error?.response?.data?.error || error?.message || 'Unknown error';
-      alert(`❌ Failed to import students.\n\n${msg}`);
+      setImportModal({ type: 'error', message: msg });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -70,11 +211,17 @@ const Dashboard = () => {
     setFeeUploading(true);
     try {
       const response = await api.postForm('/api/fees/import', formData);
-      const errSummary = response.errors?.length > 0 ? `\n\nWarnings:\n${response.errors.slice(0, 3).join('\n')}` : '';
-      alert(`✅ Fee Import Done!\nUpdated: ${response.insertedCount} records.${errSummary}`);
+      const warnings = response.errors?.slice(0, 10) || [];
+      setImportModal({
+        type: warnings.length > 0 ? 'warning' : 'success',
+        title: 'Fee Import Done!',
+        message: `Successfully updated ${response.insertedCount} fee records.`,
+        count: response.insertedCount,
+        warnings,
+      });
     } catch (error) {
       const msg = error?.response?.data?.error || error?.message || 'Unknown error';
-      alert(`❌ Failed to import fees.\n\n${msg}`);
+      setImportModal({ type: 'error', message: msg });
     } finally {
       setFeeUploading(false);
       if (feeFileInputRef.current) feeFileInputRef.current.value = '';
@@ -83,7 +230,9 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      
+      {/* Beautiful Import Result Modal */}
+      <ImportModal result={importModal} onClose={() => setImportModal(null)} />
+
       {/* Top Menu / Action Bar */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4">
         <div className="flex items-center space-x-2 text-indigo-600 mb-4 md:mb-0">

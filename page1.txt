@@ -1,0 +1,116 @@
+New Sainik Public School (2026-2027) 
+From 01-Apr-2026 to 15-Aug-2026 
+Payment mode - All, Fee Mode - All 
+Sr
+no.Adm.No. Stu. Type S. NameClass
+NameFee
+SourceReceip
+t NoRol
+l
+NoTot.
+AmountDiscoun
+tPay
+AmountTotalPai
+dTot.
+DuePaymentMod 
+eNot
+ePayment
+DateReceipt Note TakenB
+ySchool
+ReceiptN
+o
+1461NsDaySchola 
+rAradhya Singh UKG AAnnual
+Chagre,
+Exam Fee, 
+ID Card,
+Transport, 
+Tuition Fee 302869000 09000 9000 0 Cash01-04-
+2026
+09:16 AM Payment for April Fee to 
+March Fee Pradeep
+Kumar
+Pathak
+235DaySchola 
+rSAMEER 9th EM
+BTransport, 
+Tuition Fee 302995400 05400 5400 0 Cash02-04-
+2026
+10:09 AM Payment for February 
+Fee to March Fee and 
+against previous dues 
+from January Fee Pradeep
+Kumar
+Pathak
+3611NsDaySchola 
+rDivya UKG AAdmission 
+Fee, ID
+Card,
+Transport, 
+Tuition Fee 3030 7100 1000 6100 6100 0 Cash03-04-
+2026
+12:17 PM Payment for Admission 
+Fee to June Fee Pradeep
+Kumar
+Pathak
+4248DaySchola 
+rAnshvi 7th AAnnual
+Chagre,
+Computer 
+Fee, ID
+Card,
+Transport, 
+Tuition Fee 303165400 05400 5400 0 Cash03-04-
+2026
+12:33 PM Payment for April Fee to 
+June FeePradeep
+Kumar
+Pathak
+5510NsDaySchola 
+rAnshika Singh 1st AAnnual
+Chagre, ID 
+Card,
+Transport, 
+Tuition Fee 303277100 07100 7100 0 Cash03-04-
+2026
+04:15 PM Payment for April Fee to 
+June FeePradeep
+Kumar
+Pathak
+6613DaySchola 
+rHasnaian Nurser
+y AAdmission 
+Fee, ID
+Card,
+Transport, 
+Tuition Fee 3033 7700 07700 7700 0 Cash03-04-
+2026
+05:35 PM Payment for Admission 
+Fee to June Fee Pradeep
+Kumar
+Pathak
+7612DaySchola 
+rTarannum UKG AAdmission 
+Fee, ID
+Card,
+Transport, 
+Tuition Fee 3034 7700 3900 3800 3800 0 Cash03-04-
+2026
+05:46 PM Payment for Admission 
+Fee to June Fee Pradeep
+Kumar
+Pathak
+8614NsDaySchola 
+rSwati 7th AAdmission 
+Fee,
+Computer 
+Fee, Exam 
+Fee, ID
+Card,
+Transport, 
+Tuition Fee 3035 13300 1000 12300 12300 0 Cash05-04-
+2026
+12:42 PM Payment for Admission 
+Fee to September Fee Pradeep
+Kumar
+Pathak
