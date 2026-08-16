@@ -76,7 +76,7 @@ export default function ManualFeeEntry() {
     
     try {
       const res = await api.get(`/api/students/search?q=${encodeURIComponent(q)}&academicYear=${selectedAcademicYear}`);
-      const results = res.data.data;
+      const results = res.data || [];
       if (results.length === 0) {
         setStudentError(`No student found matching "${q}"`);
         setShowSuggestions(false);
@@ -110,8 +110,9 @@ export default function ManualFeeEntry() {
       const res = await api.get(
         `/api/students/adm/${encodeURIComponent(admNo)}?academicYear=${selectedAcademicYear}`
       );
-      setStudent(res.data.data || res.data); // depending on how backend wrapped it
-      setMonthlyDues(res.data.data?.monthly_dues || res.data.monthly_dues || []);
+      const studentData = res.data || res;
+      setStudent(studentData);
+      setMonthlyDues(studentData.monthly_dues || []);
     } catch {
       setStudentError(`Failed to fetch details for "${admNo}"`);
     } finally {
