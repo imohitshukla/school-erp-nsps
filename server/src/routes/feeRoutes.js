@@ -57,18 +57,5 @@ router.get('/reports/monthly', feeController.getMonthWiseSummary);
 router.get('/reports/category', feeController.getCategoryWiseBreakdown);
 router.get('/reports/defaulters', feeController.getDefaulterForecasting);
 
-const db = require('../db');
-router.get('/wipe_db_12345', async (req, res) => {
-  try {
-    await db.query('TRUNCATE TABLE fee_ledger CASCADE;');
-    await db.query('TRUNCATE TABLE student_monthly_dues CASCADE;');
-    await db.query('TRUNCATE TABLE class_fee_templates CASCADE;');
-    await db.query('UPDATE students SET paid_past = 0, payable_fee = 0;');
-    res.json({ message: 'DB Wiped successfully' });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
 module.exports = router;
 
