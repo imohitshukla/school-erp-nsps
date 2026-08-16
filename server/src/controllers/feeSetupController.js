@@ -168,8 +168,11 @@ exports.applyTemplate = async (req, res) => {
     let applied = 0;
 
     for (const student of studentsRes.rows) {
-      const studentConcession = Math.round((parseFloat(student.concession || 0) / 12) * 100) / 100;
-
+      const totalMonthlyFees = monthlyTuition + monthlyTransport + monthlyOther;
+      let studentConcession = Math.round((parseFloat(student.concession || 0) / 12) * 100) / 100;
+      if (studentConcession > totalMonthlyFees) {
+        studentConcession = totalMonthlyFees;
+      }
       // ── ROW 0: One-time Admission row ───────────────────────────────────────
       if (oneTimeTotal > 0) {
         await db.query(
@@ -255,7 +258,11 @@ exports.applySingleStudent = async (req, res) => {
     const monthlyTuition    = Math.round((parseFloat(tuition_fee   || 0) / 12) * 100) / 100;
     const monthlyTransport  = Math.round((parseFloat(transport_fee || 0) / 12) * 100) / 100;
     const monthlyOther      = Math.round((parseFloat(other_fee     || 0) / 12) * 100) / 100;
-    const monthlyConcession = Math.round((parseFloat(concession    || 0) / 12) * 100) / 100;
+    const totalMonthlyFees = monthlyTuition + monthlyTransport + monthlyOther;
+    let monthlyConcession = Math.round((parseFloat(concession    || 0) / 12) * 100) / 100;
+    if (monthlyConcession > totalMonthlyFees) {
+      monthlyConcession = totalMonthlyFees;
+    }
 
     const oneTimeAdmission = parseFloat(admission_fee || 0);
     const oneTimeAnnual    = parseFloat(annual_fee    || 0);
