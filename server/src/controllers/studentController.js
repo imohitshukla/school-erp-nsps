@@ -129,9 +129,8 @@ exports.getStudentStats = async (req, res) => {
       SELECT 
         SUM(CASE WHEN LOWER(gender) IN ('male', 'm', 'boy') THEN 1 ELSE 0 END) as total_male,
         SUM(CASE WHEN LOWER(gender) IN ('female', 'f', 'girl') THEN 1 ELSE 0 END) as total_female,
-        SUM(CASE WHEN transport_fee > 0 THEN 1 ELSE 0 END) as total_transport,
-        SUM(CASE WHEN status = 'INACTIVE' THEN 1 ELSE 0 END) as total_inactive,
-        SUM(CASE WHEN status = 'ACTIVE' OR status IS NULL THEN 1 ELSE 0 END) as total_active
+        SUM(CASE WHEN transport_fee > 0 THEN 1 ELSE 0 END) as total_transport
+
       FROM students 
       WHERE school_id = $1
     `, [req.user.school_id]);
@@ -140,8 +139,8 @@ exports.getStudentStats = async (req, res) => {
     const totalMale = parseInt(statsRow.total_male) || 0;
     const totalFemale = parseInt(statsRow.total_female) || 0;
     const totalTransport = parseInt(statsRow.total_transport) || 0;
-    const totalInactive = parseInt(statsRow.total_inactive) || 0;
-    const totalActive = parseInt(statsRow.total_active) || 0;
+    const totalActive = parseInt(totalStudents) || 0;
+    const totalInactive = 0;
 
     res.status(200).json({
       data: {
