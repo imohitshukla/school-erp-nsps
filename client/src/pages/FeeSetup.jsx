@@ -26,6 +26,11 @@ const FeeSetup = () => {
     tuition_fee: '',
     transport_fee: '',
     other_fee: '',
+    // One-time annual charges
+    admission_fee: '',
+    annual_fee: '',
+    id_card_fee: '',
+    exam_fee: '',
   });
 
   const fetchTemplates = async () => {
@@ -57,7 +62,7 @@ const FeeSetup = () => {
         academic_year: selectedAcademicYear,
       });
       setFeedback({ type: 'success', msg: `Fee template saved for ${form.class_name}` });
-      setForm({ class_name: '', tuition_fee: '', transport_fee: '', other_fee: '' });
+      setForm({ class_name: '', tuition_fee: '', transport_fee: '', other_fee: '', admission_fee: '', annual_fee: '', id_card_fee: '', exam_fee: '' });
       fetchTemplates();
     } catch (err) {
       setFeedback({ type: 'error', msg: err.message || 'Failed to save' });
@@ -111,6 +116,10 @@ const FeeSetup = () => {
       tuition_fee: tpl.tuition_fee,
       transport_fee: tpl.transport_fee,
       other_fee: tpl.other_fee,
+      admission_fee: tpl.admission_fee || '',
+      annual_fee: tpl.annual_fee || '',
+      id_card_fee: tpl.id_card_fee || '',
+      exam_fee: tpl.exam_fee || '',
     });
   };
 
@@ -197,30 +206,61 @@ const FeeSetup = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Annual Other Fees (₹)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Annual Other Fees (₹) <span className="text-xs text-gray-400">(monthly recurring)</span></label>
                 <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
                   <span className="bg-gray-50 px-3 py-2.5 text-gray-500 text-sm border-r">₹</span>
                   <input
                     type="number"
                     value={form.other_fee}
                     onChange={(e) => setForm(prev => ({ ...prev, other_fee: e.target.value }))}
-                    placeholder="e.g. 5000"
+                    placeholder="e.g. 3000"
                     className="flex-1 px-3 py-2.5 text-sm focus:outline-none"
                   />
                 </div>
               </div>
 
+              {/* Monthly summary */}
               <div className="bg-indigo-50 rounded-lg p-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-medium">Total Annual</span>
+                  <span className="text-gray-600 font-medium">Monthly Total (recurring)</span>
                   <span className="font-bold text-indigo-700">
-                    ₹{((parseFloat(form.tuition_fee) || 0) + (parseFloat(form.transport_fee) || 0) + (parseFloat(form.other_fee) || 0)).toLocaleString()}
+                    ₹{Math.round(((parseFloat(form.tuition_fee) || 0) + (parseFloat(form.transport_fee) || 0) + (parseFloat(form.other_fee) || 0)) / 12).toLocaleString()}/mo
                   </span>
                 </div>
-                <div className="flex justify-between text-xs mt-1">
-                  <span className="text-gray-500">Per Month</span>
-                  <span className="text-indigo-600 font-semibold">
-                    ₹{Math.round(((parseFloat(form.tuition_fee) || 0) + (parseFloat(form.transport_fee) || 0) + (parseFloat(form.other_fee) || 0)) / 12).toLocaleString()}
+              </div>
+
+              {/* One-time annual charges */}
+              <div className="border-t border-dashed border-gray-300 pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-amber-500"/>
+                  <h3 className="text-sm font-bold text-gray-700">One-Time Charges <span className="text-xs text-amber-600 font-normal">(collected once per year)</span></h3>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { key: 'admission_fee', label: 'Admission Fee' },
+                    { key: 'annual_fee',    label: 'Annual / Dev. Charge' },
+                    { key: 'id_card_fee',  label: 'ID Card Fee' },
+                    { key: 'exam_fee',     label: 'Exam Fee' },
+                  ].map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">{label} (₹)</label>
+                      <div className="flex items-center border border-amber-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-amber-400">
+                        <span className="bg-amber-50 px-2 py-2 text-amber-600 text-xs border-r">₹</span>
+                        <input
+                          type="number"
+                          value={form[key]}
+                          onChange={(e) => setForm(prev => ({ ...prev, [key]: e.target.value }))}
+                          placeholder="0"
+                          className="flex-1 px-2 py-2 text-sm focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 bg-amber-50 rounded-lg p-2 flex justify-between text-xs">
+                  <span className="text-amber-700 font-medium">Total One-Time</span>
+                  <span className="text-amber-800 font-bold">
+                    ₹{((parseFloat(form.admission_fee)||0)+(parseFloat(form.annual_fee)||0)+(parseFloat(form.id_card_fee)||0)+(parseFloat(form.exam_fee)||0)).toLocaleString()}
                   </span>
                 </div>
               </div>
