@@ -87,8 +87,8 @@ export default function ManualFeeEntry() {
       } else {
         setSearchSuggestions(results);
       }
-    } catch (err) {
-      setStudentError('Error searching for student: ' + (err?.response?.data?.error || err.message));
+    } catch {
+      setStudentError('Error searching for student.');
       setShowSuggestions(false);
     } finally {
       setStudentLoading(false);
