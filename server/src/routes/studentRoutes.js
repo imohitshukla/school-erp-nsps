@@ -33,6 +33,7 @@ router.post('/import', upload.single('file'), studentController.importStudents);
 router.get('/export', studentController.exportStudents);
 router.get('/template', studentController.downloadStudentTemplate);
 router.get('/class/:className', studentController.getStudentsByClass);
+router.get('/search', studentController.searchStudents);
 router.get('/adm/:admNo', studentController.getStudentByAdmNo);
 
 module.exports = router;

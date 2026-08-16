@@ -40,7 +40,7 @@ exports.getStudentByAdmNo = async (req, res) => {
     const { admNo } = req.params;
     const { academicYear } = req.query;
     
-    let query = 'SELECT id, adm_no, name, class_name, payable_fee, transport_fee, paid_past, concession FROM students WHERE adm_no = $1 AND school_id = $2';
+    let query = 'SELECT id, adm_no, name, father_name, gender, class_name, payable_fee, transport_fee, paid_past, concession FROM students WHERE adm_no = $1 AND school_id = $2';
     const params = [admNo, req.user.school_id];
 
     if (academicYear) {
@@ -85,6 +85,32 @@ exports.getStudentByAdmNo = async (req, res) => {
   }
 };
 
+exports.searchStudents = async (req, res) => {
+  try {
+    const { q, academicYear } = req.query;
+    if (!q) return res.status(400).json({ error: 'Search query is required' });
+
+    let query = `
+      SELECT id, adm_no, name, father_name, gender, class_name 
+      FROM students 
+      WHERE (adm_no ILIKE $1 OR name ILIKE $1) AND school_id = $2
+    `;
+    const params = [\`%\${q}%\`, req.user.school_id];
+
+    if (academicYear) {
+      query += ' AND academic_year = $3';
+      params.push(academicYear);
+    }
+    query += ' ORDER BY name ASC LIMIT 10';
+
+    const result = await db.query(query, params);
+    res.status(200).json({ data: result.rows });
+  } catch (error) {
+    console.error('Error searching students:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 
 exports.getStudentStats = async (req, res) => {
   try {
@@ -99,12 +125,23 @@ exports.getStudentStats = async (req, res) => {
       ORDER BY class_name
     `, [req.user.school_id]);
 
+    const genderStatsResult = await db.query(`
+      SELECT 
+        SUM(CASE WHEN LOWER(gender) IN ('male', 'm') THEN 1 ELSE 0 END) as total_male,
+        SUM(CASE WHEN LOWER(gender) IN ('female', 'f') THEN 1 ELSE 0 END) as total_female
+      FROM students 
+      WHERE school_id = $1
+    `, [req.user.school_id]);
+
+    const totalMale = parseInt(genderStatsResult.rows[0].total_male) || 0;
+    const totalFemale = parseInt(genderStatsResult.rows[0].total_female) || 0;
+
     res.status(200).json({
       data: {
         totalActive: totalStudents,
         totalOld: 0,
-        totalMale: 0,
-        totalFemale: 0,
+        totalMale,
+        totalFemale,
         classStats: classStatsResult.rows
       }
     });
@@ -117,7 +154,7 @@ exports.getStudentStats = async (req, res) => {
 exports.getStudents = async (req, res) => {
   try {
     const { class_name, academic_year } = req.query;
-    let query = 'SELECT id, adm_no, name, class_name, payable_fee, transport_fee, paid_past, concession, academic_year FROM students WHERE school_id = $1';
+    let query = 'SELECT id, adm_no, name, father_name, gender, class_name, payable_fee, transport_fee, paid_past, concession, academic_year FROM students WHERE school_id = $1';
     const params = [req.user.school_id];
 
     if (class_name) {
@@ -139,20 +176,20 @@ exports.getStudents = async (req, res) => {
 };
 
 exports.createStudent = async (req, res) => {
-  const { adm_no, name, class_name, academic_year, payable_fee, transport_fee, concession } = req.body;
+  const { adm_no, name, father_name, gender, class_name, academic_year, payable_fee, transport_fee, concession } = req.body;
   if (!adm_no || !name || !class_name) {
     return res.status(400).json({ error: 'adm_no, name, and class_name are required' });
   }
   try {
     const result = await db.query(
-      `INSERT INTO students (adm_no, name, class_name, academic_year, school_id, payable_fee, transport_fee, concession)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO students (adm_no, name, father_name, gender, class_name, academic_year, school_id, payable_fee, transport_fee, concession)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        ON CONFLICT (school_id, adm_no, academic_year) DO UPDATE
-       SET name = EXCLUDED.name, class_name = EXCLUDED.class_name,
+       SET name = EXCLUDED.name, father_name = EXCLUDED.father_name, gender = EXCLUDED.gender, class_name = EXCLUDED.class_name,
            payable_fee = EXCLUDED.payable_fee, transport_fee = EXCLUDED.transport_fee,
            concession = EXCLUDED.concession
        RETURNING *`,
-      [adm_no, name, class_name, academic_year || '2026-2027', req.user.school_id,
+      [adm_no, name, father_name || null, gender || null, class_name, academic_year || '2026-2027', req.user.school_id,
        parseFloat(payable_fee || 0), parseFloat(transport_fee || 0), parseFloat(concession || 0)]
     );
     res.status(201).json({ message: 'Student admitted successfully', data: result.rows[0] });
@@ -184,8 +221,10 @@ function detectColumns(headers) {
   const admIdx   = find('admno', 'adm', 'admission', 'rollno', 'roll');
   const nameIdx  = find('name', 'studentname', 'fullname');
   const classIdx = find('class', 'classname', 'grade', 'std', 'standard');
+  const fatherIdx = find('father', 'fathername', 'parentname');
+  const genderIdx = find('gender', 'sex');
 
-  return { admIdx, nameIdx, classIdx };
+  return { admIdx, nameIdx, classIdx, fatherIdx, genderIdx };
 }
 
 /**
@@ -269,7 +308,7 @@ exports.importStudents = async (req, res) => {
 
     // Detect columns from the first row's keys
     const headers = Object.keys(rows[0]);
-    const { admIdx, nameIdx, classIdx } = detectColumns(headers);
+    const { admIdx, nameIdx, classIdx, fatherIdx, genderIdx } = detectColumns(headers);
 
     if (admIdx === -1 || nameIdx === -1) {
       return res.status(400).json({
@@ -280,21 +319,31 @@ exports.importStudents = async (req, res) => {
     const admKey   = headers[admIdx];
     const nameKey  = headers[nameIdx];
     const classKey = classIdx !== -1 ? headers[classIdx] : null;
+    const fatherKey = fatherIdx !== -1 ? headers[fatherIdx] : null;
+    const genderKey = genderIdx !== -1 ? headers[genderIdx] : null;
 
     for (const row of rows) {
       const admNo      = (row[admKey]   || '').toString().trim();
       const studentName = (row[nameKey] || '').toString().trim();
       const className  = classKey ? (row[classKey] || '').toString().trim() : 'Unknown';
+      const fatherName = fatherKey ? (row[fatherKey] || '').toString().trim() : null;
+      let genderStr = genderKey ? (row[genderKey] || '').toString().trim() : null;
+      
+      // Normalize gender if present
+      if (genderStr) {
+        if (genderStr.toLowerCase().startsWith('m')) genderStr = 'Male';
+        else if (genderStr.toLowerCase().startsWith('f')) genderStr = 'Female';
+      }
 
       if (!admNo || !studentName) continue; // skip blank rows
 
       try {
         await db.query(
-          `INSERT INTO students (adm_no, name, class_name, academic_year, school_id)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO students (adm_no, name, father_name, gender, class_name, academic_year, school_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
            ON CONFLICT (school_id, adm_no, academic_year) DO UPDATE
-           SET name = EXCLUDED.name, class_name = EXCLUDED.class_name`,
-          [admNo, studentName, className || 'Unknown', academicYear, req.user.school_id]
+           SET name = EXCLUDED.name, father_name = EXCLUDED.father_name, gender = EXCLUDED.gender, class_name = EXCLUDED.class_name`,
+          [admNo, studentName, fatherName, genderStr, className || 'Unknown', academicYear, req.user.school_id]
         );
 
         // Auto-apply fee template if one exists for this class
@@ -352,7 +401,7 @@ exports.importStudents = async (req, res) => {
 exports.exportStudents = async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT adm_no, name, class_name, academic_year,
+      `SELECT adm_no, name, father_name, gender, class_name, academic_year,
               payable_fee, transport_fee, paid_past, concession
        FROM students
        WHERE school_id = $1
@@ -361,7 +410,7 @@ exports.exportStudents = async (req, res) => {
     );
 
     const rows = result.rows;
-    const headers = ['adm_no', 'name', 'class_name', 'academic_year',
+    const headers = ['adm_no', 'name', 'father_name', 'gender', 'class_name', 'academic_year',
                      'payable_fee', 'transport_fee', 'paid_past', 'concession'];
 
     const csvLines = [
@@ -409,7 +458,7 @@ exports.downloadStudentTemplate = (req, res) => {
   }
 
   // Default: CSV
-  const csvContent = 'adm_no,name,class_name\nB001,John Doe,10th\nB002,Jane Smith,LKG\n';
+  const csvContent = 'adm_no,name,father_name,gender,class_name\nB001,John Doe,Richard Doe,Male,10th\nB002,Jane Smith,Will Smith,Female,LKG\n';
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="student_import_template.csv"');
   res.status(200).send(csvContent);

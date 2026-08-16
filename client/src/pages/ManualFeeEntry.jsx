@@ -37,6 +37,8 @@ export default function ManualFeeEntry() {
   const [student, setStudent] = useState(null);
   const [studentLoading, setStudentLoading] = useState(false);
   const [studentError, setStudentError] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Monthly dues for the resolved student
   const [monthlyDues, setMonthlyDues] = useState([]);
@@ -64,24 +66,64 @@ export default function ManualFeeEntry() {
   const totalDue = totalCharged - totalPaid;
 
   // ── Resolve student on blur ─────────────────────────────────────────────────
-  const handleAdmBlur = async () => {
-    const admNo = form.admission_number.trim();
-    if (!admNo) return;
+  const searchStudents = async () => {
+    const q = form.admission_number.trim();
+    if (!q) return;
+    setStudentLoading(true);
+    setStudentError('');
+    setSearchSuggestions([]);
+    setShowSuggestions(true);
+    
+    try {
+      const res = await api.get(`/api/students/search?q=${encodeURIComponent(q)}&academicYear=${selectedAcademicYear}`);
+      const results = res.data.data;
+      if (results.length === 0) {
+        setStudentError(`No student found matching "${q}"`);
+        setShowSuggestions(false);
+      } else if (results.length === 1) {
+        // Auto-select if exact one match
+        handleSelectStudent(results[0].adm_no);
+        setShowSuggestions(false);
+      } else {
+        setSearchSuggestions(results);
+      }
+    } catch {
+      setStudentError('Error searching for student.');
+      setShowSuggestions(false);
+    } finally {
+      setStudentLoading(false);
+    }
+  };
+
+  const handleSelectStudent = async (admNo) => {
     setStudentLoading(true);
     setStudentError('');
     setStudent(null);
     setMonthlyDues([]);
+    setSearchSuggestions([]);
+    setShowSuggestions(false);
+    
+    // update input field to show the selected admission number
+    setForm(prev => ({ ...prev, admission_number: admNo }));
 
     try {
       const res = await api.get(
         `/api/students/adm/${encodeURIComponent(admNo)}?academicYear=${selectedAcademicYear}`
       );
-      setStudent(res.data);
-      setMonthlyDues(res.data.monthly_dues || []);
+      setStudent(res.data.data || res.data); // depending on how backend wrapped it
+      setMonthlyDues(res.data.data?.monthly_dues || res.data.monthly_dues || []);
     } catch {
-      setStudentError(`No student found with admission number "${admNo}"`);
+      setStudentError(`Failed to fetch details for "${admNo}"`);
     } finally {
       setStudentLoading(false);
+    }
+  };
+
+  // Allow pressing Enter to search
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      searchStudents();
     }
   };
 
@@ -145,6 +187,8 @@ export default function ManualFeeEntry() {
     setSuccess(null);
     setStudentError('');
     setSubmitError('');
+    setSearchSuggestions([]);
+    setShowSuggestions(false);
     setTimeout(() => admNoRef.current?.focus(), 50);
   };
 
@@ -220,23 +264,39 @@ export default function ManualFeeEntry() {
                       type="text"
                       id="admission_number"
                       className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
-                      placeholder="e.g. 332Ns or 4453"
+                      placeholder="e.g. 654 or John"
                       value={form.admission_number}
                       onChange={e => handleChange('admission_number', e.target.value)}
-                      onBlur={handleAdmBlur}
+                      onKeyDown={handleKeyDown}
                     />
                     <button
                       type="button"
-                      onClick={handleAdmBlur}
+                      onClick={searchStudents}
                       className="px-3 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
                     >
-                      {studentLoading
+                      {studentLoading && !showSuggestions
                         ? <Loader2 className="animate-spin" size={16} />
                         : <Search size={16} />
                       }
                     </button>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Press Tab or click the search icon after typing.</p>
+                  <p className="text-xs text-gray-400 mt-1">Type admission number or name and click search.</p>
+                  
+                  {/* Suggestions Dropdown */}
+                  {showSuggestions && searchSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {searchSuggestions.map((s) => (
+                        <div
+                          key={s.id}
+                          className="px-4 py-2 hover:bg-violet-50 cursor-pointer border-b last:border-0"
+                          onClick={() => handleSelectStudent(s.adm_no)}
+                        >
+                          <div className="font-medium text-sm text-gray-800">{s.name} <span className="text-gray-500 font-normal">({s.adm_no})</span></div>
+                          <div className="text-xs text-gray-500">Class: {s.class_name} {s.father_name ? `| Father: ${s.father_name}` : ''}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {studentError && (
@@ -251,10 +311,20 @@ export default function ManualFeeEntry() {
                       {student.name?.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-800 truncate">{student.name}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="font-semibold text-gray-800 truncate">
+                        {student.name}
+                        {student.gender && (
+                          <span className="ml-2 text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider">{student.gender}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
                         Adm: <strong>{student.adm_no}</strong> &nbsp;|&nbsp; Class: <strong>{student.class_name}</strong>
                       </p>
+                      {student.father_name && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Father: <strong>{student.father_name}</strong>
+                        </p>
+                      )}
                     </div>
                     <div className="text-right text-sm">
                       <p className="text-xs text-gray-500">Outstanding</p>
