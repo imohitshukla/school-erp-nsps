@@ -95,7 +95,7 @@ exports.searchStudents = async (req, res) => {
       FROM students 
       WHERE (adm_no ILIKE $1 OR name ILIKE $1) AND school_id = $2
     `;
-    const params = [\`%\${q}%\`, req.user.school_id];
+    const params = [`%${q}%`, req.user.school_id];
 
     if (academicYear) {
       query += ' AND academic_year = $3';
