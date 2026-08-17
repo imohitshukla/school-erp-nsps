@@ -67,8 +67,8 @@ exports.getStudentByAdmNo = async (req, res) => {
 
     let monthlyDues = duesResult.rows;
 
-    const totalDue = monthlyDues.reduce((sum, m) => sum + parseFloat(m.tuition_due || 0) + parseFloat(m.transport_due || 0) + parseFloat(m.other_due || 0) - parseFloat(m.concession || 0), 0);
-    const totalPaid = monthlyDues.reduce((sum, m) => sum + parseFloat(m.tuition_paid || 0) + parseFloat(m.transport_paid || 0) + parseFloat(m.other_paid || 0), 0);
+    const totalDue = monthlyDues.reduce((sum, m) => sum + parseFloat(m.tuition_due || 0) + parseFloat(m.transport_due || 0) + parseFloat(m.other_due || 0) + parseFloat(m.id_card_due || 0) + parseFloat(m.admission_fee_due || 0) - parseFloat(m.concession || 0), 0);
+    const totalPaid = monthlyDues.reduce((sum, m) => sum + parseFloat(m.tuition_paid || 0) + parseFloat(m.transport_paid || 0) + parseFloat(m.other_paid || 0) + parseFloat(m.id_card_paid || 0) + parseFloat(m.admission_fee_paid || 0), 0);
 
     res.status(200).json({
       data: {

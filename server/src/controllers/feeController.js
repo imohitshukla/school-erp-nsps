@@ -885,6 +885,8 @@ exports.manualFeeEntry = async (req, res) => {
     payment_date,
     tuition_amount,
     transport_amount,
+    id_card_amount,
+    admission_amount,
     payment_mode,
     receipt_no: providedReceiptNo,
     notes,
@@ -898,7 +900,9 @@ exports.manualFeeEntry = async (req, res) => {
 
   const parsedTuition   = parseFloat(tuition_amount   || 0) || 0;
   const parsedTransport = parseFloat(transport_amount || 0) || 0;
-  const totalAmount     = parsedTuition + parsedTransport;
+  const parsedIdCard    = parseFloat(id_card_amount || 0) || 0;
+  const parsedAdmission = parseFloat(admission_amount || 0) || 0;
+  const totalAmount     = parsedTuition + parsedTransport + parsedIdCard + parsedAdmission;
 
   if (totalAmount <= 0) {
     return res.status(400).json({ error: 'Total amount must be greater than zero.' });
@@ -944,29 +948,33 @@ exports.manualFeeEntry = async (req, res) => {
     // 2. Upsert monthly dues row so the charge baseline exists
     await db.query(
       `INSERT INTO student_monthly_dues
-         (student_adm_no, month_name, month_index, tuition_due, transport_due,
-          tuition_paid, transport_paid, status, academic_year, school_id, paid_at, receipt_no)
-       VALUES ($1, $2, $3, $4, $5, $4, $5, 'PAID', $6, $7, $8, $9)
+         (student_adm_no, month_name, month_index, tuition_due, transport_due, id_card_due, admission_fee_due,
+          tuition_paid, transport_paid, id_card_paid, admission_fee_paid, status, academic_year, school_id, paid_at, receipt_no)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $4, $5, $6, $7, 'PAID', $8, $9, $10, $11)
        ON CONFLICT (student_adm_no, month_name, academic_year, school_id)
        DO UPDATE SET
          tuition_paid   = LEAST(student_monthly_dues.tuition_due,
                                 student_monthly_dues.tuition_paid + $4),
          transport_paid = LEAST(student_monthly_dues.transport_due,
                                 student_monthly_dues.transport_paid + $5),
+         id_card_paid   = LEAST(student_monthly_dues.id_card_due,
+                                student_monthly_dues.id_card_paid + $6),
+         admission_fee_paid = LEAST(student_monthly_dues.admission_fee_due,
+                                student_monthly_dues.admission_fee_paid + $7),
          status = CASE
-           WHEN (student_monthly_dues.tuition_paid + $4 + student_monthly_dues.transport_paid + $5)
-                 >= (student_monthly_dues.tuition_due + student_monthly_dues.transport_due
+           WHEN (student_monthly_dues.tuition_paid + $4 + student_monthly_dues.transport_paid + $5 + student_monthly_dues.id_card_paid + $6 + student_monthly_dues.admission_fee_paid + $7)
+                 >= (student_monthly_dues.tuition_due + student_monthly_dues.transport_due + student_monthly_dues.id_card_due + student_monthly_dues.admission_fee_due
                      - student_monthly_dues.concession)
            THEN 'PAID'
-           WHEN (student_monthly_dues.tuition_paid + $4 + student_monthly_dues.transport_paid + $5) > 0
+           WHEN (student_monthly_dues.tuition_paid + $4 + student_monthly_dues.transport_paid + $5 + student_monthly_dues.id_card_paid + $6 + student_monthly_dues.admission_fee_paid + $7) > 0
            THEN 'PARTIAL'
            ELSE student_monthly_dues.status
          END,
-         paid_at   = $8,
-         receipt_no = $9`,
+         paid_at   = $10,
+         receipt_no = $11`,
       [
         student.adm_no, billing_month, mIdx,
-        parsedTuition, parsedTransport,
+        parsedTuition, parsedTransport, parsedIdCard, parsedAdmission,
         academicYear, req.user.school_id, payDate, receiptNo,
       ]
     );
@@ -976,21 +984,21 @@ exports.manualFeeEntry = async (req, res) => {
       `INSERT INTO fee_ledger
          (receipt_no, student_id, amount, payment_mode, collected_by, status, notes,
           school_id, fee_head_id, concession, tuition_amount, transport_amount,
-          billing_month, created_at)
-       VALUES ($1, $2, $3, $4, $5, 'Success', $6, $7, 1, 0, $8, $9, $10, $11)
+          id_card_amount, admission_amount, billing_month, created_at)
+       VALUES ($1, $2, $3, $4, $5, 'Success', $6, $7, 1, 0, $8, $9, $10, $11, $12, $13)
        ON CONFLICT (receipt_no) DO NOTHING
        RETURNING *`,
       [
         receiptNo, student.adm_no, totalAmount, payment_mode, collectedBy,
         notes || `Manual entry — ${billing_month}`,
-        req.user.school_id, parsedTuition, parsedTransport, billing_month, payDate,
+        req.user.school_id, parsedTuition, parsedTransport, parsedIdCard, parsedAdmission, billing_month, payDate,
       ]
     );
 
     // 4. Fetch updated monthly dues for this student
     const duesResult = await db.query(
-      `SELECT month_name, month_index, tuition_due, transport_due, concession,
-              tuition_paid, transport_paid, status
+      `SELECT month_name, month_index, tuition_due, transport_due, id_card_due, admission_fee_due, concession,
+              tuition_paid, transport_paid, id_card_paid, admission_fee_paid, status
        FROM student_monthly_dues
        WHERE student_adm_no = $1 AND school_id = $2 AND academic_year = $3
        ORDER BY month_index ASC`,

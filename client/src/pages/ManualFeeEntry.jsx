@@ -23,6 +23,8 @@ const initialForm = {
   payment_date: new Date().toISOString().split('T')[0],
   tuition_amount: '',
   transport_amount: '',
+  id_card_amount: '',
+  admission_amount: '',
   payment_mode: 'Cash',
   receipt_no: '',
   notes: '',
@@ -53,15 +55,17 @@ export default function ManualFeeEntry() {
   // ── Compute totals ──────────────────────────────────────────────────────────
   const tuition   = parseFloat(form.tuition_amount   || 0) || 0;
   const transport = parseFloat(form.transport_amount || 0) || 0;
-  const total     = tuition + transport;
+  const idCard    = parseFloat(form.id_card_amount   || 0) || 0;
+  const admission = parseFloat(form.admission_amount || 0) || 0;
+  const total     = tuition + transport + idCard + admission;
 
   // Find dues for selected month
   const selectedMonthDues = monthlyDues.find(d => d.month_name === form.billing_month);
   const totalCharged = monthlyDues.reduce(
-    (s, d) => s + parseFloat(d.tuition_due || 0) + parseFloat(d.transport_due || 0) - parseFloat(d.concession || 0), 0
+    (s, d) => s + parseFloat(d.tuition_due || 0) + parseFloat(d.transport_due || 0) + parseFloat(d.id_card_due || 0) + parseFloat(d.admission_fee_due || 0) - parseFloat(d.concession || 0), 0
   );
   const totalPaid = monthlyDues.reduce(
-    (s, d) => s + parseFloat(d.tuition_paid || 0) + parseFloat(d.transport_paid || 0), 0
+    (s, d) => s + parseFloat(d.tuition_paid || 0) + parseFloat(d.transport_paid || 0) + parseFloat(d.id_card_paid || 0) + parseFloat(d.admission_fee_paid || 0), 0
   );
   const totalDue = totalCharged - totalPaid;
 
@@ -153,6 +157,8 @@ export default function ManualFeeEntry() {
         payment_date: form.payment_date,
         tuition_amount: tuition,
         transport_amount: transport,
+        id_card_amount: idCard,
+        admission_amount: admission,
         payment_mode: form.payment_mode,
         receipt_no: form.receipt_no.trim() || undefined,
         notes: form.notes.trim() || undefined,
@@ -169,6 +175,8 @@ export default function ManualFeeEntry() {
         billing_month: '',
         tuition_amount: '',
         transport_amount: '',
+        id_card_amount: '',
+        admission_amount: '',
         receipt_no: '',
         notes: '',
         payment_date: new Date().toISOString().split('T')[0],
@@ -418,6 +426,40 @@ export default function ManualFeeEntry() {
                       placeholder="0"
                       value={form.transport_amount}
                       onChange={e => handleChange('transport_amount', e.target.value)}
+                    />
+                  </div>
+
+                  {/* ID Card Fee */}
+                  <div>
+                    <label htmlFor="id_card_amount" className="block text-xs font-medium text-gray-600 mb-1">
+                      ID Card Fee (₹)
+                    </label>
+                    <input
+                      type="number"
+                      id="id_card_amount"
+                      min="0"
+                      step="0.01"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
+                      placeholder="0"
+                      value={form.id_card_amount}
+                      onChange={e => handleChange('id_card_amount', e.target.value)}
+                    />
+                  </div>
+
+                  {/* Admission Fee */}
+                  <div>
+                    <label htmlFor="admission_amount" className="block text-xs font-medium text-gray-600 mb-1">
+                      Admission Fee (₹)
+                    </label>
+                    <input
+                      type="number"
+                      id="admission_amount"
+                      min="0"
+                      step="0.01"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
+                      placeholder="0"
+                      value={form.admission_amount}
+                      onChange={e => handleChange('admission_amount', e.target.value)}
                     />
                   </div>
 
