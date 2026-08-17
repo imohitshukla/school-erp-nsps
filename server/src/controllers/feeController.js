@@ -784,7 +784,11 @@ exports.exportFeeLedger = async (req, res) => {
         l.student_id AS adm_no,
         COALESCE(s.name, 'Unknown') AS student_name,
         COALESCE(s.class_name, 'N/A') AS class_name,
-        l.amount AS amount,
+        l.amount AS total_amount,
+        l.tuition_amount,
+        l.transport_amount,
+        l.id_card_amount,
+        l.admission_amount,
         l.payment_mode AS payment_mode,
         l.collected_by,
         l.notes,
@@ -804,7 +808,7 @@ exports.exportFeeLedger = async (req, res) => {
     query += ' ORDER BY l.created_at DESC';
 
     const result = await db.query(query, params);
-    const headers = ['receipt_no','adm_no','student_name','class_name','amount','payment_mode','collected_by','notes','date_time','status'];
+    const headers = ['receipt_no','adm_no','student_name','class_name','total_amount','tuition_amount','transport_amount','id_card_amount','admission_amount','payment_mode','collected_by','notes','date_time','status'];
     const csv = rowsToCSV(result.rows, headers);
 
     const filename = `fee_ledger_${new Date().toISOString().split('T')[0]}.csv`;
