@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { IndianRupee, Printer, QrCode, UserCircle, Edit2, CheckSquare, Square } from 'lucide-react';
 import api from '../services/api';
 import { useAppContext } from '../context/AppContext';
+import { useReactToPrint } from 'react-to-print';
 import ReceiptPrint from '../components/ReceiptPrint';
 
 /* ─── Build installment list from monthly_dues ─── */
@@ -98,6 +99,10 @@ const FeePayment = () => {
   const [printData, setPrintData] = useState(null);
   const [lastReceiptNo, setLastReceiptNo] = useState(null);
   const printRef = useRef(null);
+
+  const handleReactPrint = useReactToPrint({
+    content: () => printRef.current,
+  });
   
   // Single lump sum payment entry
   const [paidAmount, setPaidAmount] = useState('');
@@ -226,6 +231,7 @@ const FeePayment = () => {
         discount: currentDiscount,
         months: selectedInstallments.map(i => i.monthName),
         payment_mode: paymentMode,
+        payment_date: paymentDate,
         notes: paymentNote,
         receipt_no: schoolReceiptNo || undefined,
       });
@@ -274,7 +280,7 @@ const FeePayment = () => {
       const res = await api.get(`/api/fees/receipt/${receiptNo}`);
       setPrintData(res.data.data);
       setTimeout(() => {
-        window.print();
+        handleReactPrint();
       }, 500);
     } catch (err) {
       setError('Failed to fetch receipt for printing.');

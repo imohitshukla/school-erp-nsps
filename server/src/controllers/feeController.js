@@ -7,7 +7,7 @@ const logger = require('../utils/logger');
  * Body: { student_id (adm_no), months: ['April','May'], tuition_amount, transport_amount, payment_mode, notes, receipt_no }
  */
 exports.collectFee = async (req, res) => {
-  const { student_id, amount, payment_mode, notes, receipt_no: schoolReceiptNo, months, discount } = req.body;
+  const { student_id, amount, payment_mode, notes, receipt_no: schoolReceiptNo, months, discount, payment_date } = req.body;
 
   if (!student_id || !payment_mode || !months || !Array.isArray(months) || months.length === 0) {
     return res.status(400).json({ error: 'Missing required fields: student_id, payment_mode, months (array)' });
@@ -118,10 +118,10 @@ exports.collectFee = async (req, res) => {
     // Ledger Entry
     const ledgerResult = await client.query(
       `INSERT INTO fee_ledger 
-         (receipt_no, student_id, amount, payment_mode, transaction_reference, collected_by, status, notes, school_id, tuition_amount, transport_amount, month_paid, months_covered) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+         (receipt_no, student_id, amount, payment_mode, transaction_reference, collected_by, status, notes, school_id, tuition_amount, transport_amount, month_paid, months_covered, created_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, COALESCE($14, CURRENT_TIMESTAMP)) 
        RETURNING *`,
-      [receiptNo, student.adm_no, amount, payment_mode, `TXN-${Date.now()}`, collectedBy, 'Success', notes || '', req.user.school_id, totalTuitionPaid, totalTransportPaid, monthsCoveredArr[0] || '', monthsCoveredStr]
+      [receiptNo, student.adm_no, amount, payment_mode, `TXN-${Date.now()}`, collectedBy, 'Success', notes || '', req.user.school_id, totalTuitionPaid, totalTransportPaid, monthsCoveredArr[0] || '', monthsCoveredStr, payment_date ? new Date(payment_date) : null]
     );
 
     // Update the student's flat paid_past
@@ -177,7 +177,7 @@ exports.getDailyCollection = async (req, res) => {
         COALESCE(l.transport_amount, 0)                             AS transport_amount,
         COALESCE(l.concession, 0)                                   AS concession,
         l.payment_mode                                              AS mode,
-        l.billing_month,
+        l.month_paid AS billing_month,
         l.months_covered,
         l.notes,
         l.created_at                                                AS date_and_time,
@@ -1023,7 +1023,7 @@ exports.manualFeeEntry = async (req, res) => {
       `INSERT INTO fee_ledger
          (receipt_no, student_id, amount, payment_mode, collected_by, status, notes,
           school_id, fee_head_id, concession, tuition_amount, transport_amount,
-          id_card_amount, admission_amount, billing_month, created_at)
+          id_card_amount, admission_amount, month_paid, created_at)
        VALUES ($1, $2, $3, $4, $5, 'Success', $6, $7, 1, 0, $8, $9, $10, $11, $12, $13)
        ON CONFLICT (receipt_no) DO NOTHING
        RETURNING *`,
