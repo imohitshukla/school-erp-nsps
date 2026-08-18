@@ -388,6 +388,12 @@ const FeePayment = () => {
               </table>
             </div>
           )}
+          {activeStudent && installments.length === 0 && (
+             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 4, padding: 20, textAlign: 'center', color: '#6b7280', fontSize: 13 }}>
+                <p style={{ fontWeight: 600, color: '#ef4444', marginBottom: 4 }}>No fee installments generated.</p>
+                <p>Go to <strong>Fee Structure Setup</strong> and click <strong>Apply</strong> for {activeStudent.class_name} to generate monthly dues.</p>
+             </div>
+          )}
         </div>
 
         {/* ── RIGHT PANEL ── */}
