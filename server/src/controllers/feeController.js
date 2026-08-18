@@ -7,10 +7,10 @@ const logger = require('../utils/logger');
  * Body: { student_id (adm_no), months: ['April','May'], tuition_amount, transport_amount, payment_mode, notes, receipt_no }
  */
 exports.collectFee = async (req, res) => {
-  const { student_id, amount, payment_mode, notes, receipt_no: schoolReceiptNo, month_paid, discount } = req.body;
+  const { student_id, amount, payment_mode, notes, receipt_no: schoolReceiptNo, months, discount } = req.body;
 
-  if (!student_id || !payment_mode || !month_paid) {
-    return res.status(400).json({ error: 'Missing required fields: student_id, payment_mode, month_paid' });
+  if (!student_id || !payment_mode || !months || !Array.isArray(months) || months.length === 0) {
+    return res.status(400).json({ error: 'Missing required fields: student_id, payment_mode, months (array)' });
   }
 
   let remainingAmount = parseFloat(amount);
@@ -18,90 +18,119 @@ exports.collectFee = async (req, res) => {
     return res.status(400).json({ error: 'Amount must be a positive number' });
   }
 
+  const client = await db.getClient();
   try {
-    const studentResult = await db.query('SELECT id, name, adm_no, class_name FROM students WHERE adm_no = $1 AND school_id = $2', [student_id, req.user.school_id]);
+    await client.query('BEGIN');
+
+    const studentResult = await client.query('SELECT id, name, adm_no, class_name FROM students WHERE adm_no = $1 AND school_id = $2', [student_id, req.user.school_id]);
     if (studentResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: `Student with adm_no "${student_id}" not found in this school` });
     }
     const student = studentResult.rows[0];
     const receiptNo = schoolReceiptNo || `REC-${Date.now()}`;
     const collectedBy = req.user?.username || 'admin';
 
-    // Fetch the dues for this month
-    const duesRes = await db.query(
-      `SELECT * FROM student_monthly_dues WHERE student_adm_no = $1 AND month_name = $2 AND school_id = $3 AND academic_year = '2026-2027'`,
-      [student.adm_no, month_paid, req.user.school_id]
+    // Fetch the dues for all requested months
+    const duesRes = await client.query(
+      `SELECT * FROM student_monthly_dues WHERE student_adm_no = $1 AND month_name = ANY($2) AND school_id = $3 AND academic_year = '2026-2027' ORDER BY month_index ASC`,
+      [student.adm_no, months, req.user.school_id]
     );
 
     if (duesRes.rows.length === 0) {
-      return res.status(404).json({ error: `Fee record for ${month_paid} not found.` });
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: `Fee records not found.` });
     }
 
-    const dueRecord = duesRes.rows[0];
+    let discountRemaining = parseFloat(discount || 0);
+    let totalTuitionPaid = 0;
+    let totalTransportPaid = 0;
+    const monthsCoveredArr = [];
 
-    // Calculate due for each head
-    let payTuition = 0, payTransport = 0, payOther = 0;
-    let payAdmission = 0, payAnnual = 0, payIdCard = 0, payExam = 0;
+    // Process each month sequentially
+    for (const dueRecord of duesRes.rows) {
+      if (remainingAmount <= 0 && discountRemaining <= 0) break;
 
-    // Helper to distribute amount
-    const applyToBucket = (due, paid) => {
-      const remainingDue = Math.max(0, parseFloat(due || 0) - parseFloat(paid || 0));
-      const pay = Math.min(remainingAmount, remainingDue);
-      remainingAmount -= pay;
-      return pay;
-    };
+      monthsCoveredArr.push(dueRecord.month_name);
 
-    if (dueRecord.is_one_time) {
-      payAdmission = applyToBucket(dueRecord.admission_fee_due, dueRecord.admission_fee_paid);
-      payAnnual = applyToBucket(dueRecord.annual_fee_due, dueRecord.annual_fee_paid);
-      payIdCard = applyToBucket(dueRecord.id_card_due, dueRecord.id_card_paid);
-      payExam = applyToBucket(dueRecord.exam_fee_due, dueRecord.exam_fee_paid);
-      payOther = applyToBucket(dueRecord.other_due, dueRecord.other_paid); // fallback if it's stored in other_due
-    } else {
-      payTuition = applyToBucket(dueRecord.tuition_due, dueRecord.tuition_paid);
-      payTransport = applyToBucket(dueRecord.transport_due, dueRecord.transport_paid);
-      payOther = applyToBucket(dueRecord.other_due, dueRecord.other_paid);
+      let payTuition = 0, payTransport = 0, payOther = 0;
+      let payAdmission = 0, payAnnual = 0, payIdCard = 0, payExam = 0;
+      let applyDiscount = 0;
+
+      // Helper to distribute amount for this specific month
+      const applyToBucket = (due, paid) => {
+        const remainingDue = Math.max(0, parseFloat(due || 0) - parseFloat(paid || 0));
+        const pay = Math.min(remainingAmount, remainingDue);
+        remainingAmount -= pay;
+        return pay;
+      };
+
+      if (dueRecord.is_one_time) {
+        payAdmission = applyToBucket(dueRecord.admission_fee_due, dueRecord.admission_fee_paid);
+        payAnnual = applyToBucket(dueRecord.annual_fee_due, dueRecord.annual_fee_paid);
+        payIdCard = applyToBucket(dueRecord.id_card_due, dueRecord.id_card_paid);
+        payExam = applyToBucket(dueRecord.exam_fee_due, dueRecord.exam_fee_paid);
+        payOther = applyToBucket(dueRecord.other_due, dueRecord.other_paid);
+      } else {
+        payTuition = applyToBucket(dueRecord.tuition_due, dueRecord.tuition_paid);
+        payTransport = applyToBucket(dueRecord.transport_due, dueRecord.transport_paid);
+        payOther = applyToBucket(dueRecord.other_due, dueRecord.other_paid);
+      }
+
+      totalTuitionPaid += payTuition;
+      totalTransportPaid += payTransport;
+
+      // Apply discount to this month if needed
+      const totalDueThisMonth = parseFloat(dueRecord.tuition_due) + parseFloat(dueRecord.transport_due) + parseFloat(dueRecord.other_due) + parseFloat(dueRecord.admission_fee_due) + parseFloat(dueRecord.annual_fee_due) + parseFloat(dueRecord.id_card_due) + parseFloat(dueRecord.exam_fee_due);
+      const totalPaidThisMonth = parseFloat(dueRecord.tuition_paid) + parseFloat(dueRecord.transport_paid) + parseFloat(dueRecord.other_paid) + parseFloat(dueRecord.admission_fee_paid) + parseFloat(dueRecord.annual_fee_paid) + parseFloat(dueRecord.id_card_paid) + parseFloat(dueRecord.exam_fee_paid) + parseFloat(dueRecord.concession);
+      const netDue = Math.max(0, totalDueThisMonth - totalPaidThisMonth - (payTuition + payTransport + payOther + payAdmission + payAnnual + payIdCard + payExam));
+      
+      if (discountRemaining > 0 && netDue > 0) {
+        applyDiscount = Math.min(discountRemaining, netDue);
+        discountRemaining -= applyDiscount;
+      }
+
+      await client.query(
+        `UPDATE student_monthly_dues
+         SET tuition_paid = tuition_paid + $1,
+             transport_paid = transport_paid + $2,
+             other_paid = other_paid + $3,
+             admission_fee_paid = admission_fee_paid + $4,
+             annual_fee_paid = annual_fee_paid + $5,
+             id_card_paid = id_card_paid + $6,
+             exam_fee_paid = exam_fee_paid + $7,
+             concession = concession + $8,
+             status = CASE
+               WHEN (tuition_paid + $1 + transport_paid + $2 + other_paid + $3 + admission_fee_paid + $4 + annual_fee_paid + $5 + id_card_paid + $6 + exam_fee_paid + $7) >= 
+                    (tuition_due + transport_due + other_due + admission_fee_due + annual_fee_due + id_card_due + exam_fee_due - (concession + $8)) THEN 'PAID'
+               WHEN (tuition_paid + $1 + transport_paid + $2 + other_paid + $3 + admission_fee_paid + $4 + annual_fee_paid + $5 + id_card_paid + $6 + exam_fee_paid + $7) > 0 THEN 'PARTIAL'
+               ELSE status
+             END,
+             paid_at = NOW(),
+             receipt_no = $9
+         WHERE id = $10`,
+        [payTuition, payTransport, payOther, payAdmission, payAnnual, payIdCard, payExam, applyDiscount, receiptNo, dueRecord.id]
+      );
     }
 
-    const discountAmount = parseFloat(discount || 0);
+    const monthsCoveredStr = monthsCoveredArr.join(', ');
 
     // Ledger Entry
-    const ledgerResult = await db.query(
+    const ledgerResult = await client.query(
       `INSERT INTO fee_ledger 
          (receipt_no, student_id, amount, payment_mode, transaction_reference, collected_by, status, notes, school_id, tuition_amount, transport_amount, month_paid, months_covered) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
        RETURNING *`,
-      [receiptNo, student.adm_no, amount, payment_mode, `TXN-${Date.now()}`, collectedBy, 'Success', notes || '', req.user.school_id, payTuition, payTransport, month_paid, month_paid]
-    );
-
-    // Update Dues
-    await db.query(
-      `UPDATE student_monthly_dues
-       SET tuition_paid = tuition_paid + $1,
-           transport_paid = transport_paid + $2,
-           other_paid = other_paid + $3,
-           admission_fee_paid = admission_fee_paid + $4,
-           annual_fee_paid = annual_fee_paid + $5,
-           id_card_paid = id_card_paid + $6,
-           exam_fee_paid = exam_fee_paid + $7,
-           concession = concession + $8,
-           status = CASE
-             WHEN (tuition_paid + $1 + transport_paid + $2 + other_paid + $3 + admission_fee_paid + $4 + annual_fee_paid + $5 + id_card_paid + $6 + exam_fee_paid + $7) >= 
-                  (tuition_due + transport_due + other_due + admission_fee_due + annual_fee_due + id_card_due + exam_fee_due - (concession + $8)) THEN 'PAID'
-             WHEN (tuition_paid + $1 + transport_paid + $2 + other_paid + $3 + admission_fee_paid + $4 + annual_fee_paid + $5 + id_card_paid + $6 + exam_fee_paid + $7) > 0 THEN 'PARTIAL'
-             ELSE status
-           END,
-           paid_at = NOW(),
-           receipt_no = $9
-       WHERE id = $10`,
-      [payTuition, payTransport, payOther, payAdmission, payAnnual, payIdCard, payExam, discountAmount, receiptNo, dueRecord.id]
+      [receiptNo, student.adm_no, amount, payment_mode, `TXN-${Date.now()}`, collectedBy, 'Success', notes || '', req.user.school_id, totalTuitionPaid, totalTransportPaid, monthsCoveredArr[0] || '', monthsCoveredStr]
     );
 
     // Update the student's flat paid_past
-    await db.query(
+    await client.query(
       `UPDATE students SET paid_past = COALESCE(paid_past, 0) + $1 WHERE adm_no = $2 AND school_id = $3`,
       [amount, student.adm_no, req.user.school_id]
     );
+
+    await client.query('COMMIT');
 
     res.status(201).json({
       message: 'Fee collected successfully',
@@ -110,15 +139,18 @@ exports.collectFee = async (req, res) => {
         student_name: student.name,
         adm_no: student.adm_no,
         class_name: student.class_name,
-        months_paid: month_paid,
+        months_paid: monthsCoveredStr,
       },
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     logger.error('Error collecting fee:', error);
     if (error.code === '23505') {
       return res.status(409).json({ error: 'Receipt number already exists. Please use a different one.' });
     }
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 };
 

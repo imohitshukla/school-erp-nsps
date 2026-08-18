@@ -57,5 +57,8 @@ router.get('/reports/monthly', feeController.getMonthWiseSummary);
 router.get('/reports/category', feeController.getCategoryWiseBreakdown);
 router.get('/reports/defaulters', feeController.getDefaulterForecasting);
 
+// Receipt details
+router.get('/receipt/:receiptNo', feeController.getReceipt);
+
 module.exports = router;
 

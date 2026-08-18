@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { IndianRupee, Printer, QrCode, UserCircle, Edit2, CheckSquare, Square } from 'lucide-react';
 import api from '../services/api';
 import { useAppContext } from '../context/AppContext';
+import ReceiptPrint from '../components/ReceiptPrint';
 
 /* ─── Build installment list from monthly_dues ─── */
 const buildInstallments = (monthlyDues) => {
@@ -93,7 +94,9 @@ const FeePayment = () => {
   const [siblings, setSiblings] = useState([]);
   const [showDetails, setShowDetails] = useState(false);
 
-  const [selectedInstallment, setSelectedInstallment] = useState(null);
+  const [selectedInstallments, setSelectedInstallments] = useState([]);
+  const [printData, setPrintData] = useState(null);
+  const printRef = useRef(null);
   
   // Single lump sum payment entry
   const [paidAmount, setPaidAmount] = useState('');
@@ -117,7 +120,7 @@ const FeePayment = () => {
     setActiveStudent(studentData);
     const built = buildInstallments(studentData.monthly_dues || []);
     setInstallments(built);
-    setSelectedInstallment(null);
+    setSelectedInstallments([]);
     setPaidAmount('');
     setManualDiscount('');
     setError('');
@@ -164,24 +167,41 @@ const FeePayment = () => {
 
   const handleInstallmentClick = (inst) => {
     if (inst.status === 'PAID') return;
-    setSelectedInstallment(inst);
-    setManualDiscount('');
-    const due = Math.max(0, inst.netPayable - inst.totalPaid);
-    setPaidAmount(String(due));
-    setError('');
-    setSuccess('');
+    setSelectedInstallments(prev => {
+      const exists = prev.find(p => p.monthName === inst.monthName);
+      let next = [];
+      if (exists) next = prev.filter(p => p.monthName !== inst.monthName);
+      else next = [...prev, inst];
+      
+      const totalDue = next.reduce((sum, item) => sum + Math.max(0, item.netPayable - item.totalPaid), 0);
+      setPaidAmount(String(totalDue));
+      setManualDiscount('');
+      setError('');
+      setSuccess('');
+      return next;
+    });
   };
   
   const handleEqualClick = () => {
-    if (!selectedInstallment) return;
+    if (selectedInstallments.length === 0) return;
     const discount = parseFloat(manualDiscount || 0);
-    const due = Math.max(0, selectedInstallment.netPayable - selectedInstallment.totalPaid - discount);
+    const totalNetPayable = selectedInstallments.reduce((sum, i) => sum + i.netPayable, 0);
+    const totalPaidBefore = selectedInstallments.reduce((sum, i) => sum + i.totalPaid, 0);
+    const due = Math.max(0, totalNetPayable - totalPaidBefore - discount);
     setPaidAmount(String(due));
   };
 
   const currentPayment = parseFloat(paidAmount || 0);
   const currentDiscount = parseFloat(manualDiscount || 0);
-  const dueAfterPayment = selectedInstallment ? Math.max(0, selectedInstallment.netPayable - selectedInstallment.totalPaid - currentPayment - currentDiscount) : 0;
+  
+  const totalSelectedNetPayable = selectedInstallments.reduce((sum, i) => sum + i.netPayable, 0);
+  const totalSelectedPaidBefore = selectedInstallments.reduce((sum, i) => sum + i.totalPaid, 0);
+  const totalSelectedAmountTotal = selectedInstallments.reduce((sum, i) => sum + i.amountTotal, 0);
+  const totalSelectedConcession = selectedInstallments.reduce((sum, i) => sum + i.concession, 0);
+
+  const dueAfterPayment = selectedInstallments.length > 0 
+    ? Math.max(0, totalSelectedNetPayable - totalSelectedPaidBefore - currentPayment - currentDiscount) 
+    : 0;
 
   const grandTotalDue = installments.reduce((s, i) => s + i.netPayable, 0);
   const grandTotalPaid = installments.reduce((s, i) => s + i.totalPaid, 0);
@@ -190,7 +210,7 @@ const FeePayment = () => {
 
   const handleTakeFee = async () => {
     if (!activeStudent) { setError('Select a student first.'); return; }
-    if (!selectedInstallment) { setError('Select an installment from the list.'); return; }
+    if (selectedInstallments.length === 0) { setError('Select at least one installment from the list.'); return; }
     if (currentPayment <= 0) { setError('Enter a valid payment amount.'); return; }
 
     setLoading(true);
@@ -202,13 +222,13 @@ const FeePayment = () => {
         student_id: activeStudent.adm_no,
         amount: currentPayment,
         discount: currentDiscount,
-        month_paid: selectedInstallment.monthName, // we send month_paid to identify the installment
+        months: selectedInstallments.map(i => i.monthName),
         payment_mode: paymentMode,
         notes: paymentNote,
         receipt_no: schoolReceiptNo || undefined,
       });
 
-      setSuccess(`✅ Receipt ${response.data.receipt_no} generated successfully.`);
+      setSuccess(`✅ Receipt ${response.data.data.receipt_no} generated successfully.`);
 
       const refreshed = await api.get(`/api/students/adm/${activeStudent.adm_no}?academicYear=${selectedAcademicYear}`);
       loadStudent(refreshed.data);
@@ -221,14 +241,14 @@ const FeePayment = () => {
         setManualDiscount('');
       }
     } catch (err) {
-      setError(err.message || 'Failed to collect fee.');
+      setError(err.response?.data?.error || err.message || 'Failed to collect fee.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleReset = () => {
-    setSelectedInstallment(null);
+    setSelectedInstallments([]);
     setPaidAmount('');
     setManualDiscount('');
     setPaymentNote('');
@@ -237,6 +257,26 @@ const FeePayment = () => {
     setPaymentDate(new Date().toISOString().split('T')[0]);
     setError('');
     setSuccess('');
+  };
+
+  const handlePrint = async (receiptNo, e) => {
+    if (e) e.stopPropagation();
+    if (!receiptNo) {
+      setError('No receipt number found for this installment.');
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await api.get(`/api/fees/receipt/${receiptNo}`);
+      setPrintData(res.data.data);
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    } catch (err) {
+      setError('Failed to fetch receipt for printing.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fmt = (n) => `₹${parseFloat(n || 0).toLocaleString('en-IN')}`;
@@ -362,7 +402,7 @@ const FeePayment = () => {
                 <tbody>
                   {installments.map((inst, idx) => {
                     const isPaid = inst.status === 'PAID';
-                    const isSelected = selectedInstallment?.monthName === inst.monthName;
+                    const isSelected = selectedInstallments.some(p => p.monthName === inst.monthName);
                     
                     return (
                       <tr key={inst.monthName}
@@ -373,7 +413,14 @@ const FeePayment = () => {
                           borderBottom: '1px solid #e5e7eb',
                         }}>
                         <td style={{ padding: '8px', textAlign: 'center', color: '#4b5563' }}>
-                          {isPaid ? inst.sr : <Square size={14} style={{ color: '#9ca3af' }} />}
+                          {isPaid ? inst.sr : (
+                            <input 
+                              type="checkbox" 
+                              checked={isSelected} 
+                              readOnly 
+                              style={{ cursor: 'pointer' }} 
+                            />
+                          )}
                         </td>
                         <td style={{ ...tdS, fontWeight: 500, color: '#1f2937' }}>
                           {inst.title}
@@ -384,7 +431,7 @@ const FeePayment = () => {
                         </td>
                         <td style={{ ...tdS, textAlign: 'center' }}>
                           {isPaid && (
-                            <button onClick={e => e.stopPropagation()} style={{ background: '#f97316', color: '#fff', border: 'none', borderRadius: 3, padding: '3px 8px', fontSize: 10, cursor: 'pointer' }}>
+                            <button onClick={e => handlePrint(inst.receiptNo, e)} style={{ background: '#f97316', color: '#fff', border: 'none', borderRadius: 3, padding: '3px 8px', fontSize: 10, cursor: 'pointer' }}>
                               Print
                             </button>
                           )}
@@ -422,17 +469,29 @@ const FeePayment = () => {
                 </tr>
               </thead>
               <tbody>
-                {selectedInstallment ? selectedInstallment.heads.map(h => {
-                  const due = Math.max(0, h.payable - h.paid);
-                  return (
-                    <tr key={h.key} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '10px 12px', color: '#4b5563' }}>{h.label}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', color: '#4b5563' }}>{h.payable}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', color: h.paid > 0 ? '#16a34a' : '#4b5563' }}>{h.paid}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', color: due > 0 ? '#ef4444' : '#16a34a' }}>{due}</td>
-                    </tr>
-                  );
-                }) : (
+                {selectedInstallments.length > 0 ? (
+                  (() => {
+                    const combinedHeads = {};
+                    selectedInstallments.forEach(inst => {
+                      inst.heads.forEach(h => {
+                        if (!combinedHeads[h.label]) combinedHeads[h.label] = { label: h.label, payable: 0, paid: 0, key: h.key };
+                        combinedHeads[h.label].payable += h.payable;
+                        combinedHeads[h.label].paid += h.paid;
+                      });
+                    });
+                    return Object.values(combinedHeads).map((h) => {
+                      const due = Math.max(0, h.payable - h.paid);
+                      return (
+                        <tr key={h.key} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                          <td style={{ padding: '10px 12px', color: '#4b5563' }}>{h.label}</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', color: '#4b5563' }}>{h.payable}</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', color: h.paid > 0 ? '#16a34a' : '#4b5563' }}>{h.paid}</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', color: due > 0 ? '#ef4444' : '#16a34a' }}>{due}</td>
+                        </tr>
+                      );
+                    });
+                  })()
+                ) : (
                   <tr>
                     <td colSpan={4} style={{ padding: 48, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
                       ← Click an installment from the left panel
@@ -443,25 +502,25 @@ const FeePayment = () => {
             </table>
 
             {/* Summary Block */}
-            {selectedInstallment && (
+            {selectedInstallments.length > 0 && (
               <div style={{ background: '#f9fafb', padding: 12, borderBottom: '1px solid #e5e7eb' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13, fontWeight: 600, color: '#374151' }}>
                   <span>Amount</span>
-                  <span>{selectedInstallment.amountTotal}</span>
+                  <span>{totalSelectedAmountTotal}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13, fontWeight: 600, color: '#374151' }}>
                   <span>Concession</span>
-                  <span>{selectedInstallment.concession}</span>
+                  <span>{totalSelectedConcession}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, color: '#1f2937' }}>
                   <span>Payable(Amount - Concession)</span>
-                  <span>{selectedInstallment.netPayable}</span>
+                  <span>{totalSelectedNetPayable}</span>
                 </div>
               </div>
             )}
 
             {/* Payment Entry Form */}
-            {selectedInstallment && (
+            {selectedInstallments.length > 0 && (
               <div style={{ padding: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div style={{ color: '#4f46e5', fontSize: 12, fontWeight: 500 }}>
@@ -540,6 +599,7 @@ const FeePayment = () => {
           </div>
         </div>
       </div>
+      <ReceiptPrint ref={printRef} receiptData={printData} schoolData={{ name: 'New Sainik Public School', address: 'Delhi, India' }} />
     </div>
   );
 };
