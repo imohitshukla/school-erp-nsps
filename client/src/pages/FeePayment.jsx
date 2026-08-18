@@ -669,7 +669,9 @@ const FeePayment = () => {
           </div>
         </div>
       </div>
-      <ReceiptPrint ref={printRef} receiptData={printData} schoolData={{ name: 'New Sainik Public School', address: 'Delhi, India' }} />
+      <div style={{ display: 'none' }}>
+        <ReceiptPrint ref={printRef} receiptData={printData} schoolData={{ name: 'New Sainik Public School', address: 'Delhi, India' }} />
+      </div>
     </div>
   );
 };

@@ -28,13 +28,7 @@ const ReceiptPrint = React.forwardRef(({ receiptData }, ref) => {
     <div ref={ref} style={{ padding: '0px', fontFamily: '"Times New Roman", Times, serif', color: '#000', background: '#fff', width: '100%' }}>
       <style>
         {`
-          @media screen {
-            #printable-receipt-container { display: none; }
-          }
           @media print {
-            body * { visibility: hidden; }
-            #printable-receipt-container, #printable-receipt-container * { visibility: visible; }
-            #printable-receipt-container { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; box-sizing: border-box; }
             @page { margin: 5mm; }
           }
           .val-underline { border-bottom: 1px solid #ccc; display: inline-block; min-width: 100px; padding: 0 4px; }
