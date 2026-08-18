@@ -512,6 +512,32 @@ exports.updateStudentFees = async (req, res) => {
       return res.status(404).json({ error: `Student "${admNo}" not found for year ${year}` });
     }
 
+    const monthlyTuition    = Math.round((parseFloat(payable_fee   || 0) / 12) * 100) / 100;
+    const monthlyTransport  = Math.round((parseFloat(transport_fee || 0) / 12) * 100) / 100;
+    const monthlyConcession = Math.round((parseFloat(concession    || 0) / 12) * 100) / 100;
+
+    const MONTH_NAMES = ['April','May','June','July','August','September','October','November','December','January','February','March'];
+
+    for (let idx = 0; idx < 12; idx++) {
+      await db.query(
+        `INSERT INTO student_monthly_dues 
+          (student_adm_no, month_name, month_index, is_one_time, tuition_due, transport_due, other_due, concession, academic_year, school_id)
+         VALUES ($1, $2, $3, false, $4, $5, 0, $6, $7, $8)
+         ON CONFLICT (student_adm_no, month_name, academic_year, school_id)
+         DO UPDATE SET
+           tuition_due = EXCLUDED.tuition_due,
+           transport_due = EXCLUDED.transport_due,
+           concession = EXCLUDED.concession,
+           status = CASE 
+             WHEN student_monthly_dues.tuition_paid + student_monthly_dues.transport_paid + student_monthly_dues.other_paid >= 
+                  (EXCLUDED.tuition_due + EXCLUDED.transport_due + student_monthly_dues.other_due - EXCLUDED.concession) THEN 'PAID'
+             WHEN student_monthly_dues.tuition_paid + student_monthly_dues.transport_paid + student_monthly_dues.other_paid > 0 THEN 'PARTIAL'
+             ELSE 'UNPAID'
+           END`,
+        [admNo, MONTH_NAMES[idx], idx + 1, monthlyTuition, monthlyTransport, monthlyConcession, year, req.user.school_id]
+      );
+    }
+
     res.status(200).json({ message: 'Student fees updated', data: result.rows[0] });
   } catch (error) {
     console.error('Error updating student fees:', error);
