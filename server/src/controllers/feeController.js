@@ -110,7 +110,7 @@ exports.collectFee = async (req, res) => {
         student_name: student.name,
         adm_no: student.adm_no,
         class_name: student.class_name,
-        months_paid: monthList,
+        months_paid: month_paid,
       },
     });
   } catch (error) {
