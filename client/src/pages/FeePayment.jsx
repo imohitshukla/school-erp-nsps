@@ -97,6 +97,7 @@ const FeePayment = () => {
   
   // Single lump sum payment entry
   const [paidAmount, setPaidAmount] = useState('');
+  const [manualDiscount, setManualDiscount] = useState('');
 
   const [paymentMode, setPaymentMode] = useState('Cash');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
@@ -118,6 +119,7 @@ const FeePayment = () => {
     setInstallments(built);
     setSelectedInstallment(null);
     setPaidAmount('');
+    setManualDiscount('');
     setError('');
     setSuccess('');
     setSiblings([]);
@@ -163,6 +165,7 @@ const FeePayment = () => {
   const handleInstallmentClick = (inst) => {
     if (inst.status === 'PAID') return;
     setSelectedInstallment(inst);
+    setManualDiscount('');
     const due = Math.max(0, inst.netPayable - inst.totalPaid);
     setPaidAmount(String(due));
     setError('');
@@ -171,12 +174,14 @@ const FeePayment = () => {
   
   const handleEqualClick = () => {
     if (!selectedInstallment) return;
-    const due = Math.max(0, selectedInstallment.netPayable - selectedInstallment.totalPaid);
+    const discount = parseFloat(manualDiscount || 0);
+    const due = Math.max(0, selectedInstallment.netPayable - selectedInstallment.totalPaid - discount);
     setPaidAmount(String(due));
   };
 
   const currentPayment = parseFloat(paidAmount || 0);
-  const dueAfterPayment = selectedInstallment ? Math.max(0, selectedInstallment.netPayable - selectedInstallment.totalPaid - currentPayment) : 0;
+  const currentDiscount = parseFloat(manualDiscount || 0);
+  const dueAfterPayment = selectedInstallment ? Math.max(0, selectedInstallment.netPayable - selectedInstallment.totalPaid - currentPayment - currentDiscount) : 0;
 
   const grandTotalDue = installments.reduce((s, i) => s + i.netPayable, 0);
   const grandTotalPaid = installments.reduce((s, i) => s + i.totalPaid, 0);
@@ -196,6 +201,7 @@ const FeePayment = () => {
       const response = await api.post('/api/fees/collect', {
         student_id: activeStudent.adm_no,
         amount: currentPayment,
+        discount: currentDiscount,
         month_paid: selectedInstallment.monthName, // we send month_paid to identify the installment
         payment_mode: paymentMode,
         notes: paymentNote,
@@ -212,6 +218,7 @@ const FeePayment = () => {
         setSchoolReceiptNo('');
         setPaymentMode('Cash');
         setPaymentDate(new Date().toISOString().split('T')[0]);
+        setManualDiscount('');
       }
     } catch (err) {
       setError(err.message || 'Failed to collect fee.');
@@ -223,6 +230,7 @@ const FeePayment = () => {
   const handleReset = () => {
     setSelectedInstallment(null);
     setPaidAmount('');
+    setManualDiscount('');
     setPaymentNote('');
     setSchoolReceiptNo('');
     setPaymentMode('Cash');
@@ -459,16 +467,28 @@ const FeePayment = () => {
                   <div style={{ color: '#4f46e5', fontSize: 12, fontWeight: 500 }}>
                     Hit "ENTER" or Equal(=) button after entering "Paid" amount / <br/>भुगतान राशि दर्ज करने के बाद एंटर या समान (=) बटन दबाएं
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>Paid</span>
-                    <input 
-                      type="number" 
-                      value={paidAmount}
-                      onChange={e => setPaidAmount(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleEqualClick()}
-                      style={{ width: 100, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 4, textAlign: 'right', fontSize: 14 }}
-                    />
-                    <button onClick={handleEqualClick} style={{ background: '#84cc16', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 12px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>=</button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>Discount</span>
+                      <input 
+                        type="number" 
+                        value={manualDiscount}
+                        onChange={e => setManualDiscount(e.target.value)}
+                        placeholder="₹0"
+                        style={{ width: 80, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 4, textAlign: 'right', fontSize: 14 }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>Paid</span>
+                      <input 
+                        type="number" 
+                        value={paidAmount}
+                        onChange={e => setPaidAmount(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleEqualClick()}
+                        style={{ width: 100, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 4, textAlign: 'right', fontSize: 14 }}
+                      />
+                      <button onClick={handleEqualClick} style={{ background: '#84cc16', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 12px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>=</button>
+                    </div>
                   </div>
                 </div>
 

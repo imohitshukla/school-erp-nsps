@@ -7,7 +7,7 @@ const logger = require('../utils/logger');
  * Body: { student_id (adm_no), months: ['April','May'], tuition_amount, transport_amount, payment_mode, notes, receipt_no }
  */
 exports.collectFee = async (req, res) => {
-  const { student_id, amount, payment_mode, notes, receipt_no: schoolReceiptNo, month_paid } = req.body;
+  const { student_id, amount, payment_mode, notes, receipt_no: schoolReceiptNo, month_paid, discount } = req.body;
 
   if (!student_id || !payment_mode || !month_paid) {
     return res.status(400).json({ error: 'Missing required fields: student_id, payment_mode, month_paid' });
@@ -63,6 +63,8 @@ exports.collectFee = async (req, res) => {
       payOther = applyToBucket(dueRecord.other_due, dueRecord.other_paid);
     }
 
+    const discountAmount = parseFloat(discount || 0);
+
     // Ledger Entry
     const ledgerResult = await db.query(
       `INSERT INTO fee_ledger 
@@ -82,16 +84,17 @@ exports.collectFee = async (req, res) => {
            annual_fee_paid = annual_fee_paid + $5,
            id_card_paid = id_card_paid + $6,
            exam_fee_paid = exam_fee_paid + $7,
+           concession = concession + $8,
            status = CASE
              WHEN (tuition_paid + $1 + transport_paid + $2 + other_paid + $3 + admission_fee_paid + $4 + annual_fee_paid + $5 + id_card_paid + $6 + exam_fee_paid + $7) >= 
-                  (tuition_due + transport_due + other_due + admission_fee_due + annual_fee_due + id_card_due + exam_fee_due - concession) THEN 'PAID'
+                  (tuition_due + transport_due + other_due + admission_fee_due + annual_fee_due + id_card_due + exam_fee_due - (concession + $8)) THEN 'PAID'
              WHEN (tuition_paid + $1 + transport_paid + $2 + other_paid + $3 + admission_fee_paid + $4 + annual_fee_paid + $5 + id_card_paid + $6 + exam_fee_paid + $7) > 0 THEN 'PARTIAL'
              ELSE status
            END,
            paid_at = NOW(),
-           receipt_no = $8
-       WHERE id = $9`,
-      [payTuition, payTransport, payOther, payAdmission, payAnnual, payIdCard, payExam, receiptNo, dueRecord.id]
+           receipt_no = $9
+       WHERE id = $10`,
+      [payTuition, payTransport, payOther, payAdmission, payAnnual, payIdCard, payExam, discountAmount, receiptNo, dueRecord.id]
     );
 
     // Update the student's flat paid_past
