@@ -18,7 +18,7 @@ exports.collectFee = async (req, res) => {
     return res.status(400).json({ error: 'Amount must be a positive number' });
   }
 
-  const client = await db.getClient();
+  const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
 
