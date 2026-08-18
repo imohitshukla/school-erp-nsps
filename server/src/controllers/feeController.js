@@ -1152,3 +1152,29 @@ exports.generateMonthlyCharges = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+/**
+ * GET /api/fees/receipt/:receiptNo
+ * Fetches the full details of a receipt
+ */
+exports.getReceipt = async (req, res) => {
+  const { receiptNo } = req.params;
+  try {
+    // We do a join with students to get student details
+    const result = await db.query(`
+      SELECT l.*, s.name as student_name, s.class_name, s.father_name
+      FROM fee_ledger l
+      LEFT JOIN students s ON l.student_id = s.adm_no AND l.school_id = s.school_id
+      WHERE l.receipt_no = $1 AND l.school_id = $2
+    `, [receiptNo, req.user.school_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Receipt not found' });
+    }
+
+    res.json({ data: result.rows[0] });
+  } catch (err) {
+    logger.error('Error fetching receipt:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
