@@ -137,13 +137,14 @@ const ImportModal = ({ result, onClose }) => {
 };
 
 /* ─── Student List Modal ─────────────────────────────────────────────────── */
-const StudentListModal = ({ title, genderFilter, academicYear, onClose }) => {
+const StudentListModal = ({ title, genderFilter, hasTransport, academicYear, onClose }) => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let url = `/api/students?academic_year=${academicYear}`;
     if (genderFilter) url += `&gender=${encodeURIComponent(genderFilter)}`;
+    if (hasTransport) url += `&hasTransport=true`;
     api.get(url)
       .then(r => setStudents(r.data || []))
       .catch(e => console.error(e))
@@ -179,7 +180,7 @@ const StudentListModal = ({ title, genderFilter, academicYear, onClose }) => {
                   <th className="px-6 py-3 font-semibold">Name</th>
                   <th className="px-6 py-3 font-semibold">Class</th>
                   <th className="px-6 py-3 font-semibold">Gender</th>
-                  <th className="px-6 py-3 font-semibold">Father Name</th>
+                  <th className="px-6 py-3 font-semibold text-right">Transport Fee</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -189,7 +190,7 @@ const StudentListModal = ({ title, genderFilter, academicYear, onClose }) => {
                     <td className="px-6 py-3 font-medium text-gray-800">{s.name}</td>
                     <td className="px-6 py-3 text-indigo-600 font-medium">{s.class_name}</td>
                     <td className="px-6 py-3 text-gray-600">{s.gender || '-'}</td>
-                    <td className="px-6 py-3 text-gray-500 text-xs">{s.father_name || '-'}</td>
+                    <td className="px-6 py-3 text-gray-600 font-medium text-right text-teal-600">{parseFloat(s.transport_fee || 0) > 0 ? `₹${s.transport_fee}` : '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -304,6 +305,7 @@ const Dashboard = () => {
         <StudentListModal
           title={listModal.title}
           genderFilter={listModal.genderFilter}
+          hasTransport={listModal.hasTransport}
           academicYear={selectedAcademicYear}
           onClose={() => setListModal(null)}
         />
@@ -371,7 +373,7 @@ const Dashboard = () => {
         <KpiCard title="InActive Students" value={stats.totalInactive || 0} icon={<UserCheck className="text-red-500" size={32} />} borderColor="border-red-400" titleColor="text-blue-600" />
         <KpiCard title="New Students" value={stats.totalNew || stats.totalActive} icon={<div className="bg-cyan-400 text-white text-xs font-bold px-2 py-1 rounded transform -rotate-12">NEW</div>} borderColor="border-cyan-400" titleColor="text-blue-600" />
         <KpiCard title="Female Student" value={stats.totalFemale} icon={<UserCheck className="text-pink-500" size={32} />} borderColor="border-pink-400" titleColor="text-blue-600" onClick={() => setListModal({ title: 'Female Students', genderFilter: 'Female' })} />
-        <KpiCard title="Transport" value={stats.totalTransport || 0} icon={<Shield className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" />
+        <KpiCard title="Transport" value={stats.totalTransport || 0} icon={<Shield className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" onClick={() => setListModal({ title: 'Transport Students', hasTransport: true })} />
       </div>
 
       {/* Chart Section */}

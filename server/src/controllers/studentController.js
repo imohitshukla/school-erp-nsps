@@ -163,7 +163,7 @@ exports.getStudentStats = async (req, res) => {
 
 exports.getStudents = async (req, res) => {
   try {
-    const { class_name, academic_year, gender } = req.query;
+    const { class_name, academic_year, gender, hasTransport } = req.query;
     let query = 'SELECT id, adm_no, name, father_name, gender, class_name, payable_fee, transport_fee, paid_past, concession, academic_year FROM students WHERE school_id = $1';
     const params = [req.user.school_id];
 
@@ -178,6 +178,9 @@ exports.getStudents = async (req, res) => {
     if (gender) {
       params.push(gender);
       query += ` AND gender = $${params.length}`;
+    }
+    if (hasTransport === 'true') {
+      query += ` AND transport_fee > 0`;
     }
 
     query += ' ORDER BY name ASC';
