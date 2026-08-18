@@ -473,3 +473,42 @@ exports.downloadStudentTemplate = (req, res) => {
   res.setHeader('Content-Disposition', 'attachment; filename="student_import_template.csv"');
   res.status(200).send(csvContent);
 };
+
+/**
+ * PUT /api/students/:admNo/fees
+ * Update individual student fee overrides (transport, tuition, concession)
+ */
+exports.updateStudentFees = async (req, res) => {
+  try {
+    const { admNo } = req.params;
+    const { payable_fee, transport_fee, concession, academic_year } = req.body;
+    const year = academic_year || req.query.academicYear || '2026-2027';
+
+    const result = await db.query(
+      `UPDATE students
+       SET payable_fee = $1,
+           transport_fee = $2,
+           concession = $3
+       WHERE adm_no = $4 AND school_id = $5 AND academic_year = $6
+       RETURNING adm_no, name, class_name, payable_fee, transport_fee, concession`,
+      [
+        parseFloat(payable_fee || 0),
+        parseFloat(transport_fee || 0),
+        parseFloat(concession || 0),
+        admNo,
+        req.user.school_id,
+        year,
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: `Student "${admNo}" not found for year ${year}` });
+    }
+
+    res.status(200).json({ message: 'Student fees updated', data: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating student fees:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
