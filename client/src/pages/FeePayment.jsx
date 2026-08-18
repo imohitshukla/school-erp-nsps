@@ -289,6 +289,37 @@ const FeePayment = () => {
     }
   };
 
+  const handlePrintEstimate = () => {
+    if (!activeStudent) return;
+    if (selectedInstallments.length === 0) {
+      setError("Please select installments to print a fee estimate.");
+      return;
+    }
+    const estimateData = {
+      receipt_no: 'ESTIMATE',
+      created_at: new Date(),
+      student_id: activeStudent.adm_no,
+      class_name: activeStudent.class_name,
+      student_name: activeStudent.name,
+      father_name: activeStudent.father_name || '-',
+      payment_mode: 'DUE SLIP',
+      months_covered: selectedInstallments.map(i => i.monthName).join(', '),
+      tuition_amount: selectedInstallments.reduce((sum, i) => sum + parseFloat(i.tuition_due || 0), 0) - selectedInstallments.reduce((sum, i) => sum + parseFloat(i.tuition_paid || 0), 0),
+      transport_amount: selectedInstallments.reduce((sum, i) => sum + parseFloat(i.transport_due || 0), 0) - selectedInstallments.reduce((sum, i) => sum + parseFloat(i.transport_paid || 0), 0),
+      admission_amount: selectedInstallments.reduce((sum, i) => sum + parseFloat(i.admission_fee_due || 0), 0) - selectedInstallments.reduce((sum, i) => sum + parseFloat(i.admission_fee_paid || 0), 0),
+      annual_amount: selectedInstallments.reduce((sum, i) => sum + parseFloat(i.annual_fee_due || 0), 0) - selectedInstallments.reduce((sum, i) => sum + parseFloat(i.annual_fee_paid || 0), 0),
+      id_card_amount: selectedInstallments.reduce((sum, i) => sum + parseFloat(i.id_card_due || 0), 0) - selectedInstallments.reduce((sum, i) => sum + parseFloat(i.id_card_paid || 0), 0),
+      exam_amount: selectedInstallments.reduce((sum, i) => sum + parseFloat(i.exam_fee_due || 0), 0) - selectedInstallments.reduce((sum, i) => sum + parseFloat(i.exam_fee_paid || 0), 0),
+      other_amount: selectedInstallments.reduce((sum, i) => sum + parseFloat(i.other_due || 0), 0) - selectedInstallments.reduce((sum, i) => sum + parseFloat(i.other_paid || 0), 0),
+      concession: selectedInstallments.reduce((sum, i) => sum + parseFloat(i.concession || 0), 0),
+      amount: selectedInstallments.reduce((sum, i) => sum + i.netPayable, 0) - selectedInstallments.reduce((sum, i) => sum + i.totalPaid, 0)
+    };
+    setPrintData(estimateData);
+    setTimeout(() => {
+      handleReactPrint();
+    }, 500);
+  };
+
   const fmt = (n) => `₹${parseFloat(n || 0).toLocaleString('en-IN')}`;
 
   return (
@@ -463,9 +494,26 @@ const FeePayment = () => {
 
         {/* ── RIGHT PANEL ── */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <h2 style={{ fontSize: 16, fontWeight: 600, color: '#1f2937', margin: 0 }}>Fee Structure</h2>
-            <span style={{ color: '#4f46e5', fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>Get Help</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+              <span style={{ color: '#4f46e5', fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>Get Help</span>
+              <button 
+                onClick={() => {
+                  if (lastReceiptNo) {
+                    handlePrint(lastReceiptNo);
+                  } else if (selectedInstallments.length > 0) {
+                    handlePrintEstimate();
+                  } else {
+                    setError("Select installments to print an estimate, or take fee to print receipt.");
+                  }
+                }}
+                style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#ef4444', borderRadius: 4, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                title="Print Due Slip / Receipt"
+              >
+                <Printer size={14} /> <span style={{fontSize: 11, fontWeight: 600}}>Print</span>
+              </button>
+            </div>
           </div>
 
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
