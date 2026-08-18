@@ -373,8 +373,6 @@ const Dashboard = () => {
         <KpiCard title="Female Student" value={stats.totalFemale} icon={<UserCheck className="text-pink-500" size={32} />} borderColor="border-pink-400" titleColor="text-blue-600" onClick={() => setListModal({ title: 'Female Students', genderFilter: 'Female' })} />
         <KpiCard title="Transport" value={stats.totalTransport || 0} icon={<Shield className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" />
       </div>
-        <KpiCard title="Transport" value={stats.totalTransport || 0} icon={<Shield className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" />
-      </div>
 
       {/* Chart Section */}
       <div className="bg-white border border-gray-200 shadow-sm rounded p-4 mb-6">
