@@ -136,6 +136,71 @@ const ImportModal = ({ result, onClose }) => {
   );
 };
 
+/* ─── Student List Modal ─────────────────────────────────────────────────── */
+const StudentListModal = ({ title, genderFilter, academicYear, onClose }) => {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let url = `/api/students?academic_year=${academicYear}`;
+    if (genderFilter) url += `&gender=${encodeURIComponent(genderFilter)}`;
+    api.get(url)
+      .then(r => setStudents(r.data || []))
+      .catch(e => console.error(e))
+      .finally(() => setLoading(false));
+  }, [academicYear, genderFilter]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(4px)' }}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden" style={{ animation: 'modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+          <div>
+            <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+            <p className="text-xs text-gray-500 mt-0.5">{students.length} students found</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="p-0 flex-1 overflow-auto">
+          {loading ? (
+            <div className="flex flex-col justify-center items-center h-48 text-gray-500 gap-2">
+               <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+               Loading students...
+            </div>
+          ) : students.length === 0 ? (
+            <div className="flex justify-center items-center h-48 text-gray-500">No students found.</div>
+          ) : (
+            <table className="w-full text-sm text-left">
+              <thead className="bg-gray-100 text-gray-600 sticky top-0 shadow-sm">
+                <tr>
+                  <th className="px-6 py-3 font-semibold">Adm No</th>
+                  <th className="px-6 py-3 font-semibold">Name</th>
+                  <th className="px-6 py-3 font-semibold">Class</th>
+                  <th className="px-6 py-3 font-semibold">Gender</th>
+                  <th className="px-6 py-3 font-semibold">Father Name</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {students.map(s => (
+                  <tr key={s.adm_no} className="hover:bg-indigo-50 transition-colors">
+                    <td className="px-6 py-3 font-mono text-gray-500 text-xs">{s.adm_no}</td>
+                    <td className="px-6 py-3 font-medium text-gray-800">{s.name}</td>
+                    <td className="px-6 py-3 text-indigo-600 font-medium">{s.class_name}</td>
+                    <td className="px-6 py-3 text-gray-600">{s.gender || '-'}</td>
+                    <td className="px-6 py-3 text-gray-500 text-xs">{s.father_name || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ─── Dashboard Component ────────────────────────────────────────────────── */
 const Dashboard = () => {
   const { selectedAcademicYear } = useAppContext();
@@ -153,8 +218,9 @@ const Dashboard = () => {
   const fileInputRef = useRef(null);
   const feeFileInputRef = useRef(null);
 
-  // Modal state
+  // Modal states
   const [importModal, setImportModal] = useState(null);
+  const [listModal, setListModal] = useState(null);
 
   const fetchStats = async () => {
     try {
@@ -233,6 +299,16 @@ const Dashboard = () => {
       {/* Beautiful Import Result Modal */}
       <ImportModal result={importModal} onClose={() => setImportModal(null)} />
 
+      {/* Student List Modal */}
+      {listModal && (
+        <StudentListModal
+          title={listModal.title}
+          genderFilter={listModal.genderFilter}
+          academicYear={selectedAcademicYear}
+          onClose={() => setListModal(null)}
+        />
+      )}
+
       {/* Top Menu / Action Bar */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4">
         <div className="flex items-center space-x-2 text-indigo-600 mb-4 md:mb-0">
@@ -287,14 +363,16 @@ const Dashboard = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard title="Active Students" value={stats.totalActive} icon={<UserCheck className="text-green-500" size={32} />} borderColor="border-green-400" titleColor="text-blue-600" />
+        <KpiCard title="Active Students" value={stats.totalActive} icon={<UserCheck className="text-green-500" size={32} />} borderColor="border-green-400" titleColor="text-blue-600" onClick={() => setListModal({ title: 'All Active Students', genderFilter: '' })} />
         <KpiCard title="Old Students" value={stats.totalOld} icon={<div className="bg-yellow-400 text-white text-xs font-bold px-2 py-1 rounded transform -rotate-12">OLD</div>} borderColor="border-yellow-400" titleColor="text-blue-600" />
-        <KpiCard title="Male Student" value={stats.totalMale} icon={<UserCheck className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" />
+        <KpiCard title="Male Student" value={stats.totalMale} icon={<UserCheck className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" onClick={() => setListModal({ title: 'Male Students', genderFilter: 'Male' })} />
         <KpiCard title="Boarding" value={stats.totalBoarding || 0} icon={<Shield className="text-gray-800" size={32} />} borderColor="border-gray-300" titleColor="text-blue-600" />
         
         <KpiCard title="InActive Students" value={stats.totalInactive || 0} icon={<UserCheck className="text-red-500" size={32} />} borderColor="border-red-400" titleColor="text-blue-600" />
         <KpiCard title="New Students" value={stats.totalNew || stats.totalActive} icon={<div className="bg-cyan-400 text-white text-xs font-bold px-2 py-1 rounded transform -rotate-12">NEW</div>} borderColor="border-cyan-400" titleColor="text-blue-600" />
-        <KpiCard title="Female Student" value={stats.totalFemale} icon={<UserCheck className="text-pink-500" size={32} />} borderColor="border-pink-400" titleColor="text-blue-600" />
+        <KpiCard title="Female Student" value={stats.totalFemale} icon={<UserCheck className="text-pink-500" size={32} />} borderColor="border-pink-400" titleColor="text-blue-600" onClick={() => setListModal({ title: 'Female Students', genderFilter: 'Female' })} />
+        <KpiCard title="Transport" value={stats.totalTransport || 0} icon={<Shield className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" />
+      </div>
         <KpiCard title="Transport" value={stats.totalTransport || 0} icon={<Shield className="text-blue-500" size={32} />} borderColor="border-blue-400" titleColor="text-blue-600" />
       </div>
 
@@ -334,8 +412,11 @@ const Dashboard = () => {
   );
 };
 
-const KpiCard = ({ title, value, icon, borderColor, titleColor }) => (
-  <div className={`bg-white border-l-4 ${borderColor} border-y border-r border-gray-200 rounded p-4 shadow-sm flex justify-between items-center`}>
+const KpiCard = ({ title, value, icon, borderColor, titleColor, onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`bg-white border-l-4 ${borderColor} border-y border-r border-gray-200 rounded p-4 shadow-sm flex justify-between items-center transition-all duration-200 ${onClick ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5' : ''}`}
+  >
     <div>
       <div className={`${titleColor} text-xs font-bold mb-1`}>{title}</div>
       <div className="text-2xl font-bold text-gray-800">{value}</div>
