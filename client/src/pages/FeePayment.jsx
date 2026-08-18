@@ -209,8 +209,9 @@ const FeePayment = () => {
   const currentDue = installments.find(i => i.status !== 'PAID')?.netPayable || 0;
 
   const handleTakeFee = async () => {
-    if (!activeStudent) { setError('Select a student first.'); return; }
+    if (!activeStudent || !activeStudent.adm_no) { setError('Select a valid student first.'); return; }
     if (selectedInstallments.length === 0) { setError('Select at least one installment from the list.'); return; }
+    if (!paymentMode) { setError('Select a payment mode.'); return; }
     if (currentPayment <= 0) { setError('Enter a valid payment amount.'); return; }
 
     setLoading(true);
