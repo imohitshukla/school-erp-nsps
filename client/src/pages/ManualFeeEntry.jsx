@@ -167,8 +167,8 @@ export default function ManualFeeEntry() {
         `/api/fees/manual-entry?academicYear=${selectedAcademicYear}`,
         payload
       );
-      setSuccess({ receipt_no: res.data.receipt_no, message: res.data.message });
-      setMonthlyDues(res.data.monthly_dues || []);
+      setSuccess({ receipt_no: res.receipt_no, message: res.message });
+      setMonthlyDues(res.monthly_dues || []);
       // Reset payment fields but keep the student so admin can enter next month
       setForm(prev => ({
         ...prev,
