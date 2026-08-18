@@ -229,7 +229,7 @@ const FeePayment = () => {
         receipt_no: schoolReceiptNo || undefined,
       });
 
-      setSuccess(`✅ Receipt ${response.data.data.receipt_no} generated successfully.`);
+      setSuccess(`✅ Receipt ${response.data.receipt_no} generated successfully.`);
 
       const refreshed = await api.get(`/api/students/adm/${activeStudent.adm_no}?academicYear=${selectedAcademicYear}`);
       loadStudent(refreshed.data);
