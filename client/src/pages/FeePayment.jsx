@@ -96,6 +96,7 @@ const FeePayment = () => {
 
   const [selectedInstallments, setSelectedInstallments] = useState([]);
   const [printData, setPrintData] = useState(null);
+  const [lastReceiptNo, setLastReceiptNo] = useState(null);
   const printRef = useRef(null);
   
   // Single lump sum payment entry
@@ -229,7 +230,8 @@ const FeePayment = () => {
         receipt_no: schoolReceiptNo || undefined,
       });
 
-      setSuccess(`✅ Receipt ${response.data.receipt_no} generated successfully.`);
+      setSuccess(`✅ Receipt ${response.receipt_no} generated successfully.`);
+      setLastReceiptNo(response.receipt_no);
 
       const refreshed = await api.get(`/api/students/adm/${activeStudent.adm_no}?academicYear=${selectedAcademicYear}`);
       loadStudent(refreshed.data);
@@ -258,6 +260,7 @@ const FeePayment = () => {
     setPaymentDate(new Date().toISOString().split('T')[0]);
     setError('');
     setSuccess('');
+    setLastReceiptNo(null);
   };
 
   const handlePrint = async (receiptNo, e) => {
@@ -587,6 +590,11 @@ const FeePayment = () => {
                 {success && <div style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#16a34a', padding: '8px 12px', borderRadius: 4, marginBottom: 12, fontSize: 13 }}>{success}</div>}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  {lastReceiptNo && (
+                    <button onClick={() => handlePrint(lastReceiptNo)} style={{ background: '#f97316', color: '#fff', border: 'none', borderRadius: 4, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Printer size={14} /> Print Receipt
+                    </button>
+                  )}
                   <button onClick={handleTakeFee} disabled={loading}
                     style={{ background: '#4c1d95', color: '#fff', border: 'none', borderRadius: 4, padding: '8px 24px', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
                     {loading ? 'Processing...' : 'Take Fee'}

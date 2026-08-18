@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import {
   User, Calendar, IndianRupee, CreditCard, FileText,
-  CheckCircle, AlertCircle, Search, Loader2, Receipt,
+  CheckCircle, AlertCircle, Search, Loader2, Receipt, Printer
 } from 'lucide-react';
 import api from '../services/api';
 import { useAppContext } from '../context/AppContext';
+import { useReactToPrint } from 'react-to-print';
+import ReceiptPrint from '../components/ReceiptPrint';
 
 const MONTHS = [
   'April','May','June','July','August','September',
@@ -49,6 +51,16 @@ export default function ManualFeeEntry() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(null);   // { receipt_no, message }
   const [submitError, setSubmitError] = useState('');
+
+  // Print State
+  const [printData, setPrintData] = useState(null);
+  const [printLoading, setPrintLoading] = useState(false);
+  const printRef = useRef();
+
+  const handlePrintAction = useReactToPrint({
+    content: () => printRef.current,
+    documentTitle: `Receipt`,
+  });
 
   const admNoRef = useRef();
 
@@ -201,6 +213,26 @@ export default function ManualFeeEntry() {
     setTimeout(() => admNoRef.current?.focus(), 50);
   };
 
+  // ── Print ───────────────────────────────────────────────────────────────────
+  const handlePrint = async (receiptNo) => {
+    if (!receiptNo) {
+      setSubmitError('No receipt number found to print.');
+      return;
+    }
+    try {
+      setPrintLoading(true);
+      const res = await api.get(`/api/fees/receipt/${receiptNo}`);
+      setPrintData(res.data.data);
+      setTimeout(() => {
+        handlePrintAction();
+      }, 300);
+    } catch (err) {
+      setSubmitError('Failed to fetch receipt for printing.');
+    } finally {
+      setPrintLoading(false);
+    }
+  };
+
   // ── Month status badge ──────────────────────────────────────────────────────
   const statusBadge = (status) => {
     const map = {
@@ -238,12 +270,20 @@ export default function ManualFeeEntry() {
 
             {/* Success Banner */}
             {success && (
-              <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-                <CheckCircle className="text-emerald-500 mt-0.5 flex-shrink-0" size={20} />
-                <div>
-                  <p className="font-semibold text-emerald-800">{success.message}</p>
-                  <p className="text-sm text-emerald-600">Receipt No: <strong>{success.receipt_no}</strong></p>
+              <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="text-emerald-500 mt-0.5 flex-shrink-0" size={20} />
+                  <div>
+                    <p className="font-semibold text-emerald-800">{success.message}</p>
+                    <p className="text-sm text-emerald-600">Receipt No: <strong>{success.receipt_no}</strong></p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => handlePrint(success.receipt_no)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors"
+                >
+                  <Printer size={16} /> Print Receipt
+                </button>
               </div>
             )}
 
@@ -598,9 +638,20 @@ export default function ManualFeeEntry() {
                         >
                           <span className="text-xs font-medium text-gray-700 w-20">{d.month_name}</span>
                           {statusBadge(d.status)}
-                          <span className="text-xs text-gray-500 text-right">
-                            {fmt(paid)}/{fmt(charged)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 text-right">
+                              {fmt(paid)}/{fmt(charged)}
+                            </span>
+                            {d.status === 'PAID' && d.receipt_no && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handlePrint(d.receipt_no); }}
+                                className="text-orange-500 hover:text-orange-700 bg-orange-50 p-1 rounded transition-colors"
+                                title="Print Receipt"
+                              >
+                                <Printer size={14} />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -612,6 +663,11 @@ export default function ManualFeeEntry() {
           </div>
 
         </div>
+      </div>
+      
+      {/* Hidden Print Area */}
+      <div style={{ display: 'none' }}>
+        <ReceiptPrint ref={printRef} receiptData={printData} schoolData={null} />
       </div>
     </div>
   );
