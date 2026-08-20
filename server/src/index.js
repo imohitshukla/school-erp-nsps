@@ -24,6 +24,7 @@ const tenantRoutes = require('./routes/tenantRoutes');
 const communicationRoutes = require('./routes/communicationRoutes');
 const academicRoutes = require('./routes/academicRoutes');
 const staffRoutes = require('./routes/staffRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Mount Routes
 app.use('/api/tenant', tenantRoutes);
@@ -34,6 +35,7 @@ app.use('/api/fee-setup', authMiddleware, feeSetupRoutes);
 app.use('/api/communications', authMiddleware, communicationRoutes);
 app.use('/api/academics', authMiddleware, academicRoutes);
 app.use('/api/staff', authMiddleware, staffRoutes);
+app.use('/api/admin', authMiddleware, adminRoutes);
 
 
 // Health Check

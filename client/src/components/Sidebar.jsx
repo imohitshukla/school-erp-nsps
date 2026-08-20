@@ -4,12 +4,15 @@ import {
   LayoutDashboard, BookOpen, Settings, MessageSquare, 
   IndianRupee, Sliders, Monitor, User, HeadphonesIcon, 
   HelpCircle, MessageCircle, FileText, ShoppingCart, Database,
-  ClipboardList
+  ClipboardList, Users, Tags, ClipboardCheck
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, closeSidebar }) => {
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'Staff & HR', path: '/staff-hr', icon: Users },
+    { name: 'Expense Management', path: '/expenses', icon: Tags },
+    { name: 'Visitor Log', path: '/visitors', icon: ClipboardCheck },
     { name: 'Academic', path: '/academic', icon: BookOpen },
     { name: 'Administration', path: '/admin', icon: Settings },
     { name: 'Communication', path: '/communication', icon: MessageSquare },

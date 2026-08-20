@@ -20,7 +20,9 @@ import SchoolRegistration from './pages/SchoolRegistration';
 import DataManagement from './pages/DataManagement';
 import PlaceholderPage from './pages/PlaceholderPage';
 import Admission from './pages/Admission';
-
+import StaffManagement from './pages/StaffManagement';
+import ExpenseManagement from './pages/ExpenseManagement';
+import VisitorLog from './pages/VisitorLog';
 function App() {
   return (
     <AppProvider>
@@ -48,6 +50,11 @@ function App() {
             <Route path="fees/manual-entry" element={<ManualFeeEntry />} />
             <Route path="data" element={<DataManagement />} />
             <Route path="admission" element={<Admission />} />
+            
+            {/* HR & Admin Phase 1 Routes */}
+            <Route path="staff-hr" element={<StaffManagement />} />
+            <Route path="expenses" element={<ExpenseManagement />} />
+            <Route path="visitors" element={<VisitorLog />} />
             
             {/* Placeholder routes for incomplete features */}
             <Route path="setup" element={<PlaceholderPage />} />
