@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { IndianRupee, Printer, QrCode, UserCircle, Edit2 } from 'lucide-react';
 import api from '../services/api';
 import { useAppContext } from '../context/AppContext';
