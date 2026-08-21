@@ -103,6 +103,20 @@ const FeePayment = () => {
   const handleReactPrint = useReactToPrint({
     content: () => printRef.current,
   });
+
+  const [triggerPrint, setTriggerPrint] = useState(false);
+
+  useEffect(() => {
+    if (triggerPrint && printData) {
+      // Small delay to allow images to load and DOM to settle
+      const timer = setTimeout(() => {
+        handleReactPrint();
+        setTriggerPrint(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [triggerPrint, printData, handleReactPrint]);
+
   
   // Single lump sum payment entry
   const [paidAmount, setPaidAmount] = useState('');
@@ -279,9 +293,7 @@ const FeePayment = () => {
       setLoading(true);
       const res = await api.get(`/api/fees/receipt/${receiptNo}`);
       setPrintData(res.data.data);
-      setTimeout(() => {
-        handleReactPrint();
-      }, 500);
+      setTriggerPrint(true);
     } catch (err) {
       setError('Failed to fetch receipt for printing.');
     } finally {
@@ -324,9 +336,7 @@ const FeePayment = () => {
       amount: targetInstallments.reduce((sum, i) => sum + i.netPayable, 0) - targetInstallments.reduce((sum, i) => sum + i.totalPaid, 0)
     };
     setPrintData(estimateData);
-    setTimeout(() => {
-      handleReactPrint();
-    }, 500);
+    setTriggerPrint(true);
   };
 
   const fmt = (n) => `₹${parseFloat(n || 0).toLocaleString('en-IN')}`;
