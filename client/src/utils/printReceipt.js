@@ -73,8 +73,8 @@ export function printReceiptPopup(data) {
   ].join('');
 
   const monthsCovered = data.months_covered || data.month_paid || 'Fee Payment';
-  const logoUrl = window.location.origin + '/logo.png';
-  const bldgUrl = window.location.origin + '/building.jpeg';
+  const logoUrl = window.location.origin + '/new_logo.jpg';
+  const bldgUrl = window.location.origin + '/new_building.jpg';
 
   // NOTE: script tag is built by concatenation to avoid JSX parser issues
   const scriptOpen  = '<' + 'script' + '>';
