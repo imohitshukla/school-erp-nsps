@@ -669,20 +669,6 @@ const FeePayment = () => {
           </div>
         </div>
       </div>
-      {/* Hidden receipt area — rendered off-screen so we can grab innerHTML */}
-      <div
-        ref={printRef}
-        style={{
-          position: 'fixed',
-          top: '-9999px',
-          left: '-9999px',
-          width: '800px',
-          zIndex: -1,
-          pointerEvents: 'none',
-        }}
-      >
-        <ReceiptPrint receiptData={printData} />
-      </div>
     </div>
   );
 };
