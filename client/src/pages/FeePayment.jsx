@@ -250,8 +250,9 @@ const FeePayment = () => {
         receipt_no: schoolReceiptNo || undefined,
       });
 
-      setSuccess(`✅ Receipt ${response.receipt_no} generated successfully.`);
-      setLastReceiptNo(response.receipt_no);
+      const newReceiptNo = response?.data?.receipt_no || response?.receipt_no;
+      setSuccess(`✅ Fee collected! Receipt No: ${newReceiptNo || 'Generated'}`);
+      setLastReceiptNo(newReceiptNo);
 
       const refreshed = await api.get(`/api/students/adm/${activeStudent.adm_no}?academicYear=${selectedAcademicYear}`);
       loadStudent(refreshed.data);
@@ -291,11 +292,17 @@ const FeePayment = () => {
     }
     try {
       setLoading(true);
+      // api.get() returns the raw JSON from server: { data: { ...receiptFields } }
       const res = await api.get(`/api/fees/receipt/${receiptNo}`);
-      setPrintData(res.data.data);
+      const receiptPayload = res?.data || res;
+      if (!receiptPayload) {
+        setError('Receipt data is empty. Please try again.');
+        return;
+      }
+      setPrintData(receiptPayload);
       setTriggerPrint(true);
     } catch (err) {
-      setError('Failed to fetch receipt for printing.');
+      setError(`Failed to fetch receipt: ${err.message || 'Unknown error'}. Check if receipt exists.`);
     } finally {
       setLoading(false);
     }

@@ -4,300 +4,295 @@ const ReceiptPrint = React.forwardRef(({ receiptData }, ref) => {
   if (!receiptData) return null;
 
   const fmtDate = (d) => {
-    if (!d) return '';
+    if (!d) return new Date().toLocaleString('en-IN');
     const date = new Date(d);
-    return `${date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    if (isNaN(date)) return String(d);
+    return date.toLocaleString('en-IN', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
   };
 
-  const fmtAmt = (amt) => {
+  const fmtRupee = (amt) => {
     const val = parseFloat(amt || 0);
-    return val.toFixed(2);
+    return `₹${val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  // Extract totals based on the provided data or calculate from heads
-  const totalPaidAmt = parseFloat(receiptData.amount || 0);
-  const concessionAmt = parseFloat(receiptData.concession || 0);
-  // Estimate data sometimes has a total amount calculated differently
-  let totalFeeAmt = parseFloat(receiptData.total_fee_amount || 0);
-  
-  if (!totalFeeAmt && receiptData.tuition_amount !== undefined) {
-    totalFeeAmt = parseFloat(receiptData.tuition_amount || 0) + 
-                  parseFloat(receiptData.transport_amount || 0) + 
-                  parseFloat(receiptData.admission_amount || 0) + 
-                  parseFloat(receiptData.annual_amount || 0) + 
-                  parseFloat(receiptData.id_card_amount || 0) + 
-                  parseFloat(receiptData.exam_amount || 0) + 
-                  parseFloat(receiptData.other_amount || 0) + concessionAmt;
-  }
-  
-  if (!totalFeeAmt && receiptData.annual_amount) {
-     totalFeeAmt = parseFloat(receiptData.annual_amount) + parseFloat(receiptData.exam_amount || 0) + parseFloat(receiptData.id_card_amount || 0) + parseFloat(receiptData.transport_amount || 0) + parseFloat(receiptData.tuition_amount || 0);
-  }
+  // --- Compute totals ---
+  const paidAmt       = parseFloat(receiptData.amount || 0);
+  const concession    = parseFloat(receiptData.concession || 0);
 
-  const netPayable = Math.max(0, totalFeeAmt - concessionAmt);
-  const finalDueAmt = receiptData.remaining_due !== undefined ? receiptData.remaining_due : Math.max(0, netPayable - totalPaidAmt);
+  // Detailed fee heads
+  const tuitionPaid   = parseFloat(receiptData.tuition_amount   || 0);
+  const transportPaid = parseFloat(receiptData.transport_amount || 0);
+  const otherPaid     = parseFloat(receiptData.other_amount     || 0);
+  const admissionPaid = parseFloat(receiptData.admission_amount || 0);
+  const annualPaid    = parseFloat(receiptData.annual_amount    || 0);
+  const idCardPaid    = parseFloat(receiptData.id_card_amount   || 0);
+  const examPaid      = parseFloat(receiptData.exam_amount      || 0);
+
+  // totalFeeDue is the gross (before concession) fee for the months on this receipt
+  const totalFeeDue   = parseFloat(receiptData.total_fee_amount || 0) ||
+    (tuitionPaid + transportPaid + otherPaid + admissionPaid + annualPaid + idCardPaid + examPaid + concession);
+
+  const netPayable    = Math.max(0, totalFeeDue - concession);
+  const remainingDue  = parseFloat(receiptData.remaining_due !== undefined ? receiptData.remaining_due : Math.max(0, netPayable - paidAmt));
+
+  // Fee heads to display (filter out zero rows)
+  const feeHeads = [
+    { label: 'Tuition Fee',              amount: tuitionPaid   },
+    { label: 'Transport Fee',            amount: transportPaid },
+    { label: 'Admission Fee',            amount: admissionPaid },
+    { label: 'Annual / Development Fee', amount: annualPaid    },
+    { label: 'ID Card Fee',              amount: idCardPaid    },
+    { label: 'Board / Exam Fee',         amount: examPaid      },
+    { label: 'Other Charges',            amount: otherPaid     },
+  ].filter(h => h.amount > 0);
+
+  const monthsCovered = receiptData.months_covered || receiptData.month_paid || 'Fee Payment';
 
   return (
-    <div ref={ref} style={{ padding: '0px', fontFamily: '"Inter", "Roboto", "Helvetica Neue", Arial, sans-serif', color: '#000', background: '#fff', width: '100%' }}>
-      <style>
-        {`
-          @media print {
-            @page { margin: 10mm; }
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          }
-          .receipt-container {
-            position: relative;
-            max-width: 800px;
-            margin: 0 auto;
-            border: 2px solid #1a202c;
-            border-radius: 8px;
-            padding: 40px;
-            background: #fff;
-            overflow: hidden;
-            box-sizing: border-box;
-          }
-          .watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70%;
-            opacity: 0.05;
-            pointer-events: none;
-            z-index: 0;
-          }
-          .content-wrapper {
-            position: relative;
-            z-index: 1;
-          }
-          .header-section {
-            text-align: center;
-            margin-bottom: 30px;
-          }
-          .school-name {
-            font-size: 28px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #111827;
-            margin: 0 0 8px 0;
-          }
-          .school-code {
-            font-size: 14px;
-            color: #4b5563;
-            margin: 0 0 16px 0;
-          }
-          .receipt-title {
-            font-size: 20px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin: 0;
-            padding-bottom: 4px;
-          }
-          .top-info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-            font-size: 14px;
-            line-height: 1.5;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 20px;
-          }
-          .info-group {
-            display: flex;
-            gap: 8px;
-          }
-          .info-label {
-            font-weight: 600;
-            min-width: 120px;
-          }
-          .info-value {
-            color: #1f2937;
-          }
-          .student-info {
-            margin-bottom: 30px;
-            font-size: 15px;
-            line-height: 1.8;
-          }
-          .receipt-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 40px;
-            border: 1px solid #d1d5db;
-          }
-          .receipt-table th, .receipt-table td {
-            border: 1px solid #d1d5db;
-            padding: 12px 16px;
-            font-size: 15px;
-          }
-          .receipt-table th {
-            text-align: left;
-            font-weight: 700;
-            background-color: #f9fafb;
-            color: #111827;
-          }
-          .receipt-table .amount-col {
-            text-align: right;
-            width: 200px;
-          }
-          .receipt-table td.font-bold {
-            font-weight: 700;
-          }
-          .text-green { color: #16a34a; font-weight: 700; }
-          .text-red { color: #dc2626; font-weight: 700; }
-          
-          .footer-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-top: 40px;
-            font-size: 13px;
-            color: #4b5563;
-          }
-          .signatory-box {
-            text-align: center;
-          }
-          .signatory-line {
-            width: 200px;
-            border-top: 1px solid #000;
-            margin-bottom: 8px;
-          }
-          .signatory-text {
-            font-weight: 700;
-            color: #000;
-            font-size: 14px;
-          }
-          .header-images {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            position: absolute;
-            top: 40px;
-            left: 40px;
-            right: 40px;
-            z-index: 1;
-          }
-          .logo-img {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
-          }
-          .building-img {
-            width: 120px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          }
-        `}
-      </style>
-      
-      <div className="receipt-container">
-        <img src="/logo.png" alt="Watermark" className="watermark" onError={(e) => e.target.style.display = 'none'} />
-        
-        <div className="header-images">
-          <img src="/logo.png" alt="Logo" className="logo-img" onError={(e) => e.target.style.display = 'none'} />
-          <img src="/building.jpeg" alt="Building" className="building-img" onError={(e) => e.target.style.display = 'none'} />
+    <div ref={ref}>
+      <style>{`
+        @media print {
+          @page { margin: 8mm; size: A4; }
+          body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .no-print { display: none !important; }
+        }
+        .rp-wrap {
+          font-family: 'Times New Roman', Times, serif;
+          color: #000;
+          background: #fff;
+          padding: 24px;
+          max-width: 800px;
+          margin: 0 auto;
+          border: 2px solid #1a1a2e;
+          border-radius: 6px;
+          box-sizing: border-box;
+        }
+        /* HEADER */
+        .rp-header {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          border-bottom: 3px double #1a1a2e;
+          padding-bottom: 16px;
+          margin-bottom: 18px;
+        }
+        .rp-logo { width: 80px; height: 80px; object-fit: contain; flex-shrink: 0; }
+        .rp-school-info { flex: 1; text-align: center; }
+        .rp-school-name { font-size: 22px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 4px; }
+        .rp-school-sub  { font-size: 12px; margin: 0 0 2px; color: #333; }
+        .rp-building { width: 110px; height: 80px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+        /* RECEIPT TITLE BANNER */
+        .rp-title-banner {
+          text-align: center;
+          background: #1a1a2e;
+          color: #fff;
+          font-size: 15px;
+          font-weight: bold;
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          padding: 6px;
+          margin-bottom: 18px;
+          border-radius: 3px;
+        }
+        /* INFO GRID */
+        .rp-info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4px 20px;
+          margin-bottom: 18px;
+          font-size: 13px;
+          border: 1px solid #ddd;
+          padding: 10px 14px;
+          border-radius: 4px;
+          background: #fafafa;
+        }
+        .rp-info-row { display: flex; gap: 6px; }
+        .rp-info-label { font-weight: bold; min-width: 115px; color: #444; white-space: nowrap; }
+        .rp-info-value { color: #111; }
+        /* FEE TABLE */
+        .rp-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+          font-size: 13px;
+        }
+        .rp-table th {
+          background: #1a1a2e;
+          color: #fff;
+          padding: 8px 12px;
+          text-align: left;
+          font-size: 13px;
+        }
+        .rp-table th.right { text-align: right; }
+        .rp-table td { border: 1px solid #ccc; padding: 7px 12px; }
+        .rp-table td.right { text-align: right; }
+        .rp-table tr:nth-child(even) td { background: #f9f9f9; }
+        .rp-table .summary-row td { border-top: 2px solid #666; font-weight: bold; background: #f0f0f0; }
+        .rp-table .paid-row td { color: #16a34a; font-weight: bold; background: #f0fff4; }
+        .rp-table .due-row td { color: #dc2626; font-weight: bold; background: #fff1f1; }
+        /* FOOTER */
+        .rp-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-top: 30px;
+          font-size: 12px;
+          color: #555;
+        }
+        .rp-sig { text-align: center; }
+        .rp-sig-line { width: 180px; border-top: 1px solid #000; margin-bottom: 6px; }
+        .rp-sig-name { font-weight: bold; font-size: 13px; color: #000; }
+        .rp-watermark-note { font-style: italic; font-size: 11px; }
+      `}</style>
+
+      <div className="rp-wrap">
+        {/* === HEADER === */}
+        <div className="rp-header">
+          <img
+            src="/logo.png"
+            alt="School Logo"
+            className="rp-logo"
+            onError={e => { e.target.style.display = 'none'; }}
+          />
+          <div className="rp-school-info">
+            <p className="rp-school-name">New Sainik Public School</p>
+            <p className="rp-school-sub">Siyarpakha, Gudha Kalan, Naraini, Banda, U.P. – 210129</p>
+            <p className="rp-school-sub">📞 7887299111, 9198343345 &nbsp;|&nbsp; ✉ inquiry@newsainikpublicschool.in</p>
+            <p className="rp-school-sub">Affiliation No: EJ-6/18-19 &nbsp;|&nbsp; UDISE Code: 09400405918</p>
+            <p className="rp-school-sub">State Board of Uttar Pradesh &nbsp;|&nbsp; Academic Year: 2026-2027</p>
+          </div>
+          <img
+            src="/building.jpeg"
+            alt="School Building"
+            className="rp-building"
+            onError={e => { e.target.style.display = 'none'; }}
+          />
         </div>
 
-        <div className="content-wrapper">
-          {/* Header */}
-          <div className="header-section">
-            <h1 className="school-name">New Sainik Public School</h1>
-            <p className="school-code">School Code: nsps</p>
-            <h2 className="receipt-title">Fee Receipt</h2>
-          </div>
+        {/* === TITLE BANNER === */}
+        <div className="rp-title-banner">Fee Receipt – Student Copy</div>
 
-          {/* Top Info Grid */}
-          <div className="top-info-grid">
-            <div>
-              <div className="info-group">
-                <span className="info-label">Receipt No:</span>
-                <span className="info-value">{receiptData.receipt_no || 'N/A'}</span>
-              </div>
-              <div className="info-group" style={{ marginTop: '8px' }}>
-                <span className="info-label">Date & Time:</span>
-                <span className="info-value">{fmtDate(receiptData.created_at || Date.now())}</span>
-              </div>
+        {/* === RECEIPT + STUDENT INFO === */}
+        <div className="rp-info-grid">
+          <div>
+            <div className="rp-info-row">
+              <span className="rp-info-label">Receipt No:</span>
+              <span className="rp-info-value" style={{ fontWeight: 'bold' }}>{receiptData.receipt_no || '—'}</span>
             </div>
-            <div>
-              <div className="info-group">
-                <span className="info-label">Payment Mode:</span>
-                <span className="info-value">{receiptData.payment_mode || 'Cash'}</span>
-              </div>
-              <div className="info-group" style={{ marginTop: '8px' }}>
-                <span className="info-label">Handled By:</span>
-                <span className="info-value">{receiptData.collected_by || 'admin1@school.com'}</span>
-              </div>
+            <div className="rp-info-row">
+              <span className="rp-info-label">Date &amp; Time:</span>
+              <span className="rp-info-value">{fmtDate(receiptData.created_at)}</span>
+            </div>
+            <div className="rp-info-row">
+              <span className="rp-info-label">Payment Mode:</span>
+              <span className="rp-info-value">{receiptData.payment_mode || 'Cash'}</span>
+            </div>
+            <div className="rp-info-row">
+              <span className="rp-info-label">Handled By:</span>
+              <span className="rp-info-value">{receiptData.collected_by || 'Admin'}</span>
             </div>
           </div>
-
-          {/* Student Info */}
-          <div className="student-info">
-            <div className="info-group">
-              <span className="info-label">Student Name:</span>
-              <span className="info-value" style={{ textTransform: 'uppercase', fontWeight: 'bold' }}>{receiptData.student_name}</span>
+          <div>
+            <div className="rp-info-row">
+              <span className="rp-info-label">Student Name:</span>
+              <span className="rp-info-value" style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{receiptData.student_name || '—'}</span>
             </div>
-            <div className="info-group">
-              <span className="info-label">Admission No:</span>
-              <span className="info-value">{receiptData.student_id}</span>
+            <div className="rp-info-row">
+              <span className="rp-info-label">Admission No:</span>
+              <span className="rp-info-value">{receiptData.student_id || '—'}</span>
             </div>
-            <div className="info-group">
-              <span className="info-label">Class & Section:</span>
-              <span className="info-value">{receiptData.class_name}</span>
+            <div className="rp-info-row">
+              <span className="rp-info-label">Class:</span>
+              <span className="rp-info-value" style={{ fontWeight: 'bold' }}>{receiptData.class_name || '—'}</span>
             </div>
-          </div>
-
-          {/* Fee Table */}
-          <table className="receipt-table">
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th className="amount-col">Amount (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Total Fee Amount</td>
-                <td className="amount-col">{fmtAmt(totalFeeAmt)}</td>
-              </tr>
-              <tr>
-                <td>Applied Concession</td>
-                <td className="amount-col">{fmtAmt(concessionAmt)}</td>
-              </tr>
-              <tr>
-                <td className="font-bold">Net Payable</td>
-                <td className="amount-col font-bold">{fmtAmt(netPayable)}</td>
-              </tr>
-              <tr>
-                <td className="font-bold text-green">Paid Amount</td>
-                <td className="amount-col text-green">{fmtAmt(totalPaidAmt)}</td>
-              </tr>
-              <tr>
-                <td className="font-bold text-red">Remaining Due</td>
-                <td className="amount-col text-red">{fmtAmt(finalDueAmt)}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          {/* Footer */}
-          <div className="footer-section">
-            <div style={{ fontStyle: 'italic' }}>
-              * This is a computer-generated receipt.
-            </div>
-            <div className="signatory-box">
-              <div className="signatory-line"></div>
-              <div className="signatory-text">Authorized Signatory</div>
+            <div className="rp-info-row">
+              <span className="rp-info-label">Father's Name:</span>
+              <span className="rp-info-value" style={{ textTransform: 'uppercase' }}>{receiptData.father_name || '—'}</span>
             </div>
           </div>
-
         </div>
+
+        {/* Months covered */}
+        <div style={{ fontSize: '13px', marginBottom: '16px', padding: '6px 14px', border: '1px solid #ddd', borderRadius: 4, background: '#f5f5ff' }}>
+          <strong>Fee for:</strong> {monthsCovered}
+        </div>
+
+        {/* === FEE BREAKDOWN TABLE === */}
+        <table className="rp-table">
+          <thead>
+            <tr>
+              <th style={{ width: '50px' }}>Sr.</th>
+              <th>Description</th>
+              <th className="right" style={{ width: '160px' }}>Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {feeHeads.length > 0 ? (
+              feeHeads.map((h, i) => (
+                <tr key={i}>
+                  <td style={{ textAlign: 'center' }}>{i + 1}</td>
+                  <td>{h.label}</td>
+                  <td className="right">{fmtRupee(h.amount)}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} style={{ textAlign: 'center', color: '#666', fontStyle: 'italic' }}>
+                  Fee payment recorded
+                </td>
+              </tr>
+            )}
+
+            {/* Summary rows */}
+            {totalFeeDue > 0 && (
+              <tr className="summary-row">
+                <td colSpan={2}>Total Fee Amount</td>
+                <td className="right">{fmtRupee(totalFeeDue)}</td>
+              </tr>
+            )}
+            {concession > 0 && (
+              <tr className="summary-row">
+                <td colSpan={2}>Concession / Discount</td>
+                <td className="right" style={{ color: '#2563eb' }}>({fmtRupee(concession)})</td>
+              </tr>
+            )}
+            {totalFeeDue > 0 && (
+              <tr className="summary-row">
+                <td colSpan={2}>Net Payable</td>
+                <td className="right">{fmtRupee(netPayable)}</td>
+              </tr>
+            )}
+            <tr className="paid-row">
+              <td colSpan={2}>✅ Amount Paid</td>
+              <td className="right">{fmtRupee(paidAmt)}</td>
+            </tr>
+            <tr className="due-row">
+              <td colSpan={2}>🔴 Remaining Due</td>
+              <td className="right">{fmtRupee(remainingDue)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* === FOOTER === */}
+        <div className="rp-footer">
+          <div className="rp-watermark-note">
+            ⚠ This is a computer-generated receipt. No signature required.
+            {receiptData.notes && <span><br />Note: {receiptData.notes}</span>}
+          </div>
+          <div className="rp-sig">
+            <div className="rp-sig-line"></div>
+            <div className="rp-sig-name">Authorized Signatory</div>
+            <div style={{ fontSize: '11px', color: '#666' }}>New Sainik Public School</div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
 });
 
+ReceiptPrint.displayName = 'ReceiptPrint';
 export default ReceiptPrint;
-

@@ -1155,24 +1155,106 @@ exports.generateMonthlyCharges = async (req, res) => {
 
 /**
  * GET /api/fees/receipt/:receiptNo
- * Fetches the full details of a receipt
+ * Fetches the full details of a receipt, including fee head breakdown
+ * from student_monthly_dues so the print receipt has all fields populated.
  */
 exports.getReceipt = async (req, res) => {
   const { receiptNo } = req.params;
   try {
-    // We do a join with students to get student details
-    const result = await db.query(`
-      SELECT l.*, s.name as student_name, s.class_name, s.father_name
+    // Step 1: Get the ledger entry + student details
+    const ledgerResult = await db.query(`
+      SELECT l.*, s.name as student_name, s.class_name, s.father_name, s.adm_no as student_adm_no
       FROM fee_ledger l
       LEFT JOIN students s ON l.student_id = s.adm_no AND l.school_id = s.school_id
       WHERE l.receipt_no = $1 AND l.school_id = $2
     `, [receiptNo, req.user.school_id]);
 
-    if (result.rows.length === 0) {
+    if (ledgerResult.rows.length === 0) {
       return res.status(404).json({ error: 'Receipt not found' });
     }
 
-    res.json({ data: result.rows[0] });
+    const ledger = ledgerResult.rows[0];
+
+    // Step 2: Get all monthly dues rows that have this receipt_no, to calculate breakdown
+    const duesResult = await db.query(`
+      SELECT 
+        SUM(tuition_paid)       as total_tuition_paid,
+        SUM(transport_paid)     as total_transport_paid,
+        SUM(other_paid)         as total_other_paid,
+        SUM(admission_fee_paid) as total_admission_paid,
+        SUM(annual_fee_paid)    as total_annual_paid,
+        SUM(id_card_paid)       as total_id_card_paid,
+        SUM(exam_fee_paid)      as total_exam_paid,
+        SUM(concession)         as total_concession,
+        SUM(tuition_due)        as total_tuition_due,
+        SUM(transport_due)      as total_transport_due,
+        SUM(other_due)          as total_other_due,
+        SUM(admission_fee_due)  as total_admission_due,
+        SUM(annual_fee_due)     as total_annual_due,
+        SUM(id_card_due)        as total_id_card_due,
+        SUM(exam_fee_due)       as total_exam_due,
+        STRING_AGG(month_name, ', ' ORDER BY month_index) as months_covered
+      FROM student_monthly_dues
+      WHERE receipt_no = $1 AND school_id = $2
+    `, [receiptNo, req.user.school_id]);
+
+    const dues = duesResult.rows[0] || {};
+
+    // Step 3: Calculate total fee amount and remaining due
+    const totalTuitionPaid    = parseFloat(dues.total_tuition_paid    || ledger.tuition_amount   || 0);
+    const totalTransportPaid  = parseFloat(dues.total_transport_paid  || ledger.transport_amount || 0);
+    const totalOtherPaid      = parseFloat(dues.total_other_paid      || 0);
+    const totalAdmissionPaid  = parseFloat(dues.total_admission_paid  || 0);
+    const totalAnnualPaid     = parseFloat(dues.total_annual_paid     || 0);
+    const totalIdCardPaid     = parseFloat(dues.total_id_card_paid    || 0);
+    const totalExamPaid       = parseFloat(dues.total_exam_paid       || 0);
+    const totalConcession     = parseFloat(dues.total_concession      || ledger.concession       || 0);
+
+    const totalFeePaid = totalTuitionPaid + totalTransportPaid + totalOtherPaid +
+                         totalAdmissionPaid + totalAnnualPaid + totalIdCardPaid + totalExamPaid;
+
+    const totalFeeDue = parseFloat(dues.total_tuition_due || 0) +
+                        parseFloat(dues.total_transport_due || 0) +
+                        parseFloat(dues.total_other_due || 0) +
+                        parseFloat(dues.total_admission_due || 0) +
+                        parseFloat(dues.total_annual_due || 0) +
+                        parseFloat(dues.total_id_card_due || 0) +
+                        parseFloat(dues.total_exam_due || 0);
+
+    const netPayable   = Math.max(0, totalFeeDue - totalConcession);
+    const remainingDue = Math.max(0, netPayable - parseFloat(ledger.amount || 0));
+
+    const enrichedData = {
+      // Ledger core fields
+      receipt_no:      ledger.receipt_no,
+      student_id:      ledger.student_id,
+      amount:          ledger.amount,
+      payment_mode:    ledger.payment_mode,
+      collected_by:    ledger.collected_by,
+      created_at:      ledger.created_at,
+      notes:           ledger.notes,
+      months_covered:  dues.months_covered || ledger.months_covered,
+      month_paid:      ledger.month_paid,
+      // Student details
+      student_name:    ledger.student_name,
+      class_name:      ledger.class_name,
+      father_name:     ledger.father_name,
+      // Detailed fee breakdown (from student_monthly_dues)
+      tuition_amount:   totalTuitionPaid,
+      transport_amount: totalTransportPaid,
+      other_amount:     totalOtherPaid,
+      admission_amount: totalAdmissionPaid,
+      annual_amount:    totalAnnualPaid,
+      id_card_amount:   totalIdCardPaid,
+      exam_amount:      totalExamPaid,
+      concession:       totalConcession,
+      // Summary
+      total_fee_amount: totalFeeDue,
+      net_payable:      netPayable,
+      remaining_due:    remainingDue,
+    };
+
+    res.json({ data: enrichedData });
   } catch (err) {
     logger.error('Error fetching receipt:', err);
     res.status(500).json({ error: 'Internal server error' });
