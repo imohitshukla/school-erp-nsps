@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { IndianRupee, Printer, QrCode, UserCircle, Edit2, CheckSquare, Square } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { IndianRupee, Printer, QrCode, UserCircle, Edit2 } from 'lucide-react';
 import api from '../services/api';
 import { useAppContext } from '../context/AppContext';
-import { useReactToPrint } from 'react-to-print';
 import ReceiptPrint from '../components/ReceiptPrint';
 
 /* ─── Build installment list from monthly_dues ─── */
@@ -100,24 +99,68 @@ const FeePayment = () => {
   const [lastReceiptNo, setLastReceiptNo] = useState(null);
   const printRef = useRef(null);
 
-  const handleReactPrint = useReactToPrint({
-    content: () => printRef.current,
-  });
+  // ─── Bulletproof print: inject receipt into hidden iframe and call print() ───
+  const triggerWindowPrint = useCallback(() => {
+    const el = printRef.current;
+    if (!el) {
+      console.error('Print ref not mounted');
+      return;
+    }
+    // Open a new window, copy the receipt HTML + styles into it, then print
+    const printWin = window.open('', '_blank', 'width=900,height=700');
+    if (!printWin) {
+      // Popup blocked – fallback: use @media print CSS
+      window.print();
+      return;
+    }
+    printWin.document.write(`
+      <!DOCTYPE html><html><head>
+        <meta charset="utf-8">
+        <title>Fee Receipt</title>
+        <style>
+          body { margin: 0; padding: 0; }
+          @media print { @page { margin: 8mm; } }
+        </style>
+      </head><body>${el.innerHTML}</body></html>
+    `);
+    printWin.document.close();
+    // Wait for images to load before printing
+    printWin.onload = () => {
+      printWin.focus();
+      printWin.print();
+      setTimeout(() => printWin.close(), 1000);
+    };
+    // Fallback if onload doesn't fire
+    setTimeout(() => {
+      try {
+        printWin.focus();
+        printWin.print();
+        setTimeout(() => printWin.close(), 1000);
+      } catch (e) {}
+    }, 600);
+  }, []);
 
-  const [triggerPrint, setTriggerPrint] = useState(false);
+  // Trigger print once printData is set in state
+  const pendingPrint = useRef(false);
+
+  const doPrint = useCallback((data) => {
+    setPrintData(data);
+    pendingPrint.current = true;
+  }, []);
 
   useEffect(() => {
-    if (triggerPrint && printData) {
-      // Small delay to allow images to load and DOM to settle
-      const timer = setTimeout(() => {
-        handleReactPrint();
-        setTriggerPrint(false);
-      }, 100);
-      return () => clearTimeout(timer);
+    if (pendingPrint.current && printData) {
+      pendingPrint.current = false;
+      // Give React one tick to render the updated ReceiptPrint component
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          triggerWindowPrint();
+        });
+      });
     }
-  }, [triggerPrint, printData, handleReactPrint]);
+  });
 
-  
+
   // Single lump sum payment entry
   const [paidAmount, setPaidAmount] = useState('');
   const [manualDiscount, setManualDiscount] = useState('');
@@ -299,8 +342,7 @@ const FeePayment = () => {
         setError('Receipt data is empty. Please try again.');
         return;
       }
-      setPrintData(receiptPayload);
-      setTriggerPrint(true);
+      doPrint(receiptPayload);
     } catch (err) {
       setError(`Failed to fetch receipt: ${err.message || 'Unknown error'}. Check if receipt exists.`);
     } finally {
@@ -342,8 +384,7 @@ const FeePayment = () => {
       concession: targetInstallments.reduce((sum, i) => sum + parseFloat(i.concession || 0), 0),
       amount: targetInstallments.reduce((sum, i) => sum + i.netPayable, 0) - targetInstallments.reduce((sum, i) => sum + i.totalPaid, 0)
     };
-    setPrintData(estimateData);
-    setTriggerPrint(true);
+    doPrint(estimateData);
   };
 
   const fmt = (n) => `₹${parseFloat(n || 0).toLocaleString('en-IN')}`;
@@ -686,8 +727,19 @@ const FeePayment = () => {
           </div>
         </div>
       </div>
-      <div style={{ display: 'none' }}>
-        <ReceiptPrint ref={printRef} receiptData={printData} schoolData={{ name: 'New Sainik Public School', address: 'Delhi, India' }} />
+      {/* Hidden receipt area — rendered off-screen so we can grab innerHTML */}
+      <div
+        ref={printRef}
+        style={{
+          position: 'fixed',
+          top: '-9999px',
+          left: '-9999px',
+          width: '800px',
+          zIndex: -1,
+          pointerEvents: 'none',
+        }}
+      >
+        <ReceiptPrint receiptData={printData} />
       </div>
     </div>
   );

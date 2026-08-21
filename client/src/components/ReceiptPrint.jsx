@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ReceiptPrint = React.forwardRef(({ receiptData }, ref) => {
+const ReceiptPrint = ({ receiptData }) => {
   if (!receiptData) return null;
 
   const fmtDate = (d) => {
@@ -292,7 +292,6 @@ const ReceiptPrint = React.forwardRef(({ receiptData }, ref) => {
       </div>
     </div>
   );
-});
+};
 
-ReceiptPrint.displayName = 'ReceiptPrint';
 export default ReceiptPrint;
