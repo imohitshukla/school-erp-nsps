@@ -24,7 +24,7 @@ const Administration = () => {
     try {
       setLoading(true);
       const res = await api.get('/api/staff');
-      setStaff(res.data.data || []);
+      setStaff(res.data || []);
     } catch (error) {
       console.error('Error fetching staff', error);
     } finally {
