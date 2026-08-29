@@ -9,7 +9,7 @@ import { useAppContext } from '../context/AppContext';
 
 const EXAM_TYPES = ['HALF YEARLY', 'ANNUAL', 'PT1', 'PT2', 'PRE-BOARD', 'UNIT TEST'];
 
-// Class-specific subject presets — tailored by grade level
+// Class-specific subject presets
 const CLASS_SUBJECT_PRESETS = {
   // Pre-Primary (Nursery, LKG, UKG, Playgroup)
   pre_primary: ['English', 'Hindi', 'Mathematics', 'General Knowledge', 'Drawing & Art', 'Rhymes & Oral'],
@@ -45,12 +45,10 @@ export const getSubjectsForClass = (className) => {
   const raw = className.toString().trim().toUpperCase();
   const clean = raw.replace(/\s+/g, '');
 
-  // Pre-primary
   if (['NUR', 'LKG', 'UKG', 'PREP', 'PLAY', 'KG'].some(k => clean.includes(k))) {
     return CLASS_SUBJECT_PRESETS.pre_primary;
   }
 
-  // Roman Numerals & standard class strings
   if (/\b(XII|12TH|12)\b/.test(raw) || clean.includes('12') || clean.includes('XII')) {
     return CLASS_SUBJECT_PRESETS.senior_science;
   }
@@ -58,10 +56,10 @@ export const getSubjectsForClass = (className) => {
     return CLASS_SUBJECT_PRESETS.senior_science;
   }
   if (/\b(X|10TH|10)\b/.test(raw) || clean.includes('10') || clean === 'X' || clean.startsWith('X-') || clean.startsWith('X_')) {
-    return CLASS_SUBJECT_PRESETS.secondary; // No Sanskrit
+    return CLASS_SUBJECT_PRESETS.secondary;
   }
   if (/\b(IX|9TH|9)\b/.test(raw) || clean.includes('9') || clean === 'IX' || clean.startsWith('IX-') || clean.startsWith('IX_')) {
-    return CLASS_SUBJECT_PRESETS.secondary; // No Sanskrit
+    return CLASS_SUBJECT_PRESETS.secondary;
   }
   if (/\b(VIII|8TH|8)\b/.test(raw) || clean.includes('8') || clean.includes('VIII')) {
     return CLASS_SUBJECT_PRESETS.middle;
@@ -73,12 +71,11 @@ export const getSubjectsForClass = (className) => {
     return CLASS_SUBJECT_PRESETS.middle;
   }
 
-  // Numeric check (1 to 5)
   const numMatch = clean.match(/\d+/);
   if (numMatch) {
     const num = parseInt(numMatch[0], 10);
     if (num >= 11) return CLASS_SUBJECT_PRESETS.senior_science;
-    if (num >= 9) return CLASS_SUBJECT_PRESETS.secondary; // 9 & 10: No Sanskrit
+    if (num >= 9) return CLASS_SUBJECT_PRESETS.secondary;
     if (num >= 6) return CLASS_SUBJECT_PRESETS.middle;
     return CLASS_SUBJECT_PRESETS.primary;
   }
@@ -95,8 +92,7 @@ const emptySubjectRow = (subj = '') => ({
 });
 
 /**
- * Robust, High-Fidelity Print Handler
- * Creates an isolated print document so app headers/sidebars are never printed.
+ * Robust Isolated Print Engine
  */
 const printElementContent = (elementId, docTitle = 'Admit Card') => {
   const contentElem = document.getElementById(elementId);
@@ -105,7 +101,6 @@ const printElementContent = (elementId, docTitle = 'Admit Card') => {
     return;
   }
 
-  // Create an invisible iframe for flawless printing
   let iframe = document.getElementById('admit-card-print-iframe');
   if (!iframe) {
     iframe = document.createElement('iframe');
@@ -136,14 +131,14 @@ const printElementContent = (elementId, docTitle = 'Admit Card') => {
           }
           body {
             margin: 0;
-            padding: ${elementId === 'print-area-single' ? '20px 40px' : '0'};
+            padding: ${elementId === 'print-area-single' ? '12mm 16mm' : '0'};
             font-family: Arial, Helvetica, sans-serif;
             background: #fff;
             color: #000;
           }
           @page {
             size: A4 portrait;
-            margin: 6mm;
+            margin: 5mm;
           }
           .admit-card-template {
             border: 2px solid #000 !important;
@@ -155,8 +150,8 @@ const printElementContent = (elementId, docTitle = 'Admit Card') => {
           .admit-card-bulk-grid {
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
-            gap: 10px !important;
-            padding: 4px !important;
+            gap: 8px !important;
+            padding: 2px !important;
           }
           table {
             width: 100%;
@@ -164,6 +159,10 @@ const printElementContent = (elementId, docTitle = 'Admit Card') => {
           }
           th, td {
             border: 1px solid #000 !important;
+          }
+          img {
+            max-width: 100%;
+            display: block;
           }
           @media print {
             body { padding: 0 !important; }
@@ -189,9 +188,9 @@ const printElementContent = (elementId, docTitle = 'Admit Card') => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// Single Admit Card Component
+// Single Admit Card Template Component
 // ─────────────────────────────────────────────────────────────
-const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) => {
+const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
   if (!student || !schedule) return null;
 
   const formatDate = (dateStr) => {
@@ -213,55 +212,154 @@ const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) =
     }
   };
 
-  const yearDisplay = schedule.academic_year
-    ? `(${schedule.academic_year.replace('-', '-20').replace('2020', '20')})`
-    : '';
+  const acadYear = schedule.academic_year || '2026-2027';
 
   const cardStyle = compact ? {
-    fontSize: '9px',
-    padding: '10px 14px',
+    fontSize: '8.5px',
+    padding: '8px 12px',
     border: '2px solid #000',
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
-    marginBottom: '8px',
+    marginBottom: '6px',
     background: '#fff',
     color: '#000',
   } : {
-    fontSize: '13px',
-    padding: '24px 28px',
+    fontSize: '12.5px',
+    padding: '18px 24px',
     border: '2px solid #000',
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
     marginBottom: '16px',
     background: '#fff',
-    maxWidth: '680px',
+    maxWidth: '720px',
     margin: '0 auto 16px auto',
     color: '#000',
   };
 
   return (
-    <div style={cardStyle} className="admit-card-template shadow-sm">
-      {/* School Header */}
-      <div style={{ textAlign: 'center', marginBottom: compact ? '6px' : '14px' }}>
-        <div style={{ fontWeight: '800', fontSize: compact ? '12px' : '18px', letterSpacing: '1px', textTransform: 'uppercase' }}>
-          {schoolName || 'NEW SAINIK PUBLIC SCHOOL'}
+    <div style={cardStyle} className="admit-card-template shadow-xs">
+      
+      {/* ── TOP HEADER (Left: Building Photo | Center: Info | Right: Logo Emblem) ── */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1.5px solid #000',
+        paddingBottom: compact ? '5px' : '10px',
+        marginBottom: compact ? '6px' : '12px',
+        gap: compact ? '6px' : '12px',
+      }}>
+        
+        {/* TOP LEFT: School Building Photo */}
+        <div style={{ flexShrink: 0, textAlign: 'center' }}>
+          <img 
+            src="/building.jpeg" 
+            alt="School Building"
+            onError={(e) => { e.target.src = '/new_building.jpg'; }}
+            style={{
+              width: compact ? '52px' : '82px',
+              height: compact ? '40px' : '62px',
+              objectFit: 'cover',
+              border: '1px solid #444',
+              borderRadius: '2px'
+            }}
+          />
         </div>
-        <div style={{ fontWeight: '600', fontSize: compact ? '9px' : '12px', marginTop: '2px' }}>
-          {schedule.exam_type} {yearDisplay}
+
+        {/* CENTER: School Full Information */}
+        <div style={{ flex: 1, textAlign: 'center', padding: '0 2px' }}>
+          <div style={{
+            fontWeight: '900',
+            fontSize: compact ? '12px' : '18px',
+            letterSpacing: '0.6px',
+            textTransform: 'uppercase',
+            lineHeight: '1.15',
+            fontFamily: 'Arial, sans-serif'
+          }}>
+            NEW SAINIK PUBLIC SCHOOL
+          </div>
+          
+          <div style={{
+            fontWeight: '600',
+            fontSize: compact ? '7px' : '10.5px',
+            color: '#111',
+            marginTop: '1px',
+            lineHeight: '1.2'
+          }}>
+            Siyarpakha, Gudha Kalan, Naraini, Banda, U.P. – 210129
+          </div>
+
+          <div style={{
+            fontWeight: '600',
+            fontSize: compact ? '6.5px' : '9.5px',
+            color: '#222',
+            marginTop: '1px',
+            lineHeight: '1.2'
+          }}>
+            📞 7887299111, 9198343345
+          </div>
+
+          <div style={{
+            fontWeight: '700',
+            fontSize: compact ? '6px' : '9px',
+            color: '#333',
+            marginTop: '1px',
+            letterSpacing: '0.2px'
+          }}>
+            Affiliation: EJ-6/18-19 &bull; UDISE: 09400405918 &bull; Acad. Year: {acadYear}
+          </div>
+
+          <div style={{
+            fontWeight: '800',
+            fontSize: compact ? '8.5px' : '12px',
+            marginTop: compact ? '2px' : '4px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            {schedule.exam_type} EXAMINATION ({acadYear})
+          </div>
+
+          <div style={{
+            fontWeight: '900',
+            fontSize: compact ? '9px' : '13px',
+            textDecoration: 'underline',
+            letterSpacing: '1px',
+            marginTop: '1px'
+          }}>
+            ADMIT CARD
+          </div>
         </div>
-        <div style={{ fontWeight: '700', fontSize: compact ? '10px' : '14px', textDecoration: 'underline', marginTop: '2px' }}>
-          ADMIT CARD
+
+        {/* TOP RIGHT: School Logo Emblem */}
+        <div style={{ flexShrink: 0, textAlign: 'center' }}>
+          <img 
+            src="/new_logo.jpg" 
+            alt="School Logo"
+            onError={(e) => { e.target.src = '/logo.jpg'; }}
+            style={{
+              width: compact ? '46px' : '72px',
+              height: compact ? '46px' : '72px',
+              objectFit: 'contain',
+              borderRadius: '50%'
+            }}
+          />
         </div>
       </div>
 
-      {/* Student Details */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: compact ? '6px' : '12px', gap: '12px' }}>
-        <div style={{ flex: 1, lineHeight: compact ? '1.3' : '1.6' }}>
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '3px', flexWrap: 'wrap' }}>
+      {/* ── STUDENT DETAILS & PHOTO ── */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: compact ? '6px' : '12px',
+        gap: '10px'
+      }}>
+        <div style={{ flex: 1, lineHeight: compact ? '1.35' : '1.65' }}>
+          <div style={{ display: 'flex', gap: compact ? '12px' : '24px', marginBottom: '2px', flexWrap: 'wrap' }}>
             <div><strong>Name</strong>&nbsp;&nbsp;:&nbsp;&nbsp;{student.name || '—'}</div>
             <div><strong>Class</strong>&nbsp;&nbsp;:&nbsp;&nbsp;{student.class_name || schedule.class_name || '—'}{student.section ? ` ${student.section}` : ''}</div>
           </div>
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '3px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: compact ? '12px' : '24px', marginBottom: '2px', flexWrap: 'wrap' }}>
             <div><strong>Father's Name</strong>&nbsp;&nbsp;:&nbsp;&nbsp;{student.father_name || '—'}</div>
             <div><strong>Roll No.</strong>&nbsp;&nbsp;:&nbsp;&nbsp;{student.adm_no || '—'}</div>
           </div>
@@ -269,106 +367,108 @@ const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) =
             <strong>Admission No.</strong>&nbsp;&nbsp;:&nbsp;&nbsp;{student.adm_no || '—'}
           </div>
         </div>
-        {/* Photo Placeholder */}
+
+        {/* Photo Box */}
         <div style={{
-          width: compact ? '42px' : '68px',
-          height: compact ? '50px' : '80px',
-          border: '1px solid #6b7280',
+          width: compact ? '42px' : '66px',
+          height: compact ? '50px' : '78px',
+          border: '1px solid #444',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          background: '#f9fafb',
+          background: '#fafafa',
           fontSize: compact ? '7px' : '10px',
-          color: '#6b7280',
-          fontWeight: '500'
+          color: '#555',
+          fontWeight: '600',
+          textAlign: 'center'
         }}>
-          Photo
+          Affix<br />Photo
         </div>
       </div>
 
-      {/* Subjects Timetable */}
+      {/* ── EXAM TIMETABLE TABLE ── */}
       <table style={{
         width: '100%',
         borderCollapse: 'collapse',
         marginBottom: compact ? '6px' : '12px',
-        fontSize: compact ? '8px' : '12px',
+        fontSize: compact ? '7.5px' : '11px',
       }}>
         <thead>
-          <tr style={{ background: '#f3f4f6' }}>
-            <th style={thStyle(compact)}>S.N</th>
-            <th style={thStyle(compact)}>Date</th>
+          <tr style={{ background: '#f0f0f0' }}>
+            <th style={thStyle(compact, '30px')}>S.N</th>
+            <th style={thStyle(compact, '80px')}>Date</th>
             <th style={{ ...thStyle(compact), textAlign: 'left' }}>Subject</th>
-            <th style={thStyle(compact)}>Start Time</th>
-            <th style={thStyle(compact)}>End Time</th>
-            <th style={thStyle(compact)}>Room No</th>
-            <th style={thStyle(compact)}>Inv. Sign</th>
+            <th style={thStyle(compact, '70px')}>Start Time</th>
+            <th style={thStyle(compact, '70px')}>End Time</th>
+            <th style={thStyle(compact, '55px')}>Room No</th>
+            <th style={thStyle(compact, '65px')}>Inv. Sign</th>
           </tr>
         </thead>
         <tbody>
           {(schedule.subjects || []).map((sub, i) => (
             <tr key={i}>
-              <td style={tdStyle(compact)}>{sub.serial_no || i + 1}</td>
-              <td style={tdStyle(compact)}>{formatDate(sub.exam_date)}</td>
-              <td style={{ ...tdStyle(compact), textAlign: 'left', fontWeight: '600' }}>{sub.subject}</td>
-              <td style={tdStyle(compact)}>{sub.start_time}</td>
-              <td style={tdStyle(compact)}>{sub.end_time}</td>
-              <td style={tdStyle(compact)}>{sub.room_no || ''}</td>
+              <td style={{ ...tdStyle(compact), textAlign: 'center', fontWeight: 'bold' }}>{sub.serial_no || i + 1}</td>
+              <td style={{ ...tdStyle(compact), textAlign: 'center' }}>{formatDate(sub.exam_date)}</td>
+              <td style={{ ...tdStyle(compact), textAlign: 'left', fontWeight: '700' }}>{sub.subject}</td>
+              <td style={{ ...tdStyle(compact), textAlign: 'center' }}>{sub.start_time}</td>
+              <td style={{ ...tdStyle(compact), textAlign: 'center' }}>{sub.end_time}</td>
+              <td style={{ ...tdStyle(compact), textAlign: 'center' }}>{sub.room_no || '—'}</td>
               <td style={tdStyle(compact)}></td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* Signature Row */}
+      {/* ── SIGNATURES ── */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
-        marginTop: compact ? '12px' : '26px',
-        marginBottom: compact ? '6px' : '12px',
+        marginTop: compact ? '10px' : '22px',
+        marginBottom: compact ? '6px' : '10px',
         fontWeight: '700',
-        fontSize: compact ? '8.5px' : '12px',
+        fontSize: compact ? '8px' : '11.5px',
       }}>
         <div>
-          <div style={{ borderTop: '1px solid #000', width: compact ? '85px' : '140px', marginBottom: '4px' }}></div>
+          <div style={{ borderTop: '1.2px solid #000', width: compact ? '85px' : '135px', marginBottom: '3px' }}></div>
           Sign. Class Teacher
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ borderTop: '1px solid #000', width: compact ? '85px' : '140px', marginBottom: '4px', marginLeft: 'auto' }}></div>
+          <div style={{ borderTop: '1.2px solid #000', width: compact ? '85px' : '135px', marginBottom: '3px', marginLeft: 'auto' }}></div>
           Sign. Principal
         </div>
       </div>
 
-      {/* Footer Notes */}
+      {/* ── FOOTER NOTES ── */}
       {(schedule.note_english || schedule.note_hindi) && (
         <div style={{
-          fontSize: compact ? '6.5px' : '10.5px',
-          color: '#374151',
-          borderTop: '1px solid #e5e7eb',
-          paddingTop: compact ? '4px' : '8px',
-          lineHeight: '1.4',
+          fontSize: compact ? '6.5px' : '9.5px',
+          color: '#222',
+          borderTop: '1px solid #ccc',
+          paddingTop: compact ? '3px' : '6px',
+          lineHeight: '1.35',
         }}>
-          {schedule.note_english && <div>Note: {schedule.note_english}</div>}
-          {schedule.note_hindi && <div style={{ marginTop: '2px' }}>नोट : {schedule.note_hindi}</div>}
+          {schedule.note_english && <div><strong>Note:</strong> {schedule.note_english}</div>}
+          {schedule.note_hindi && <div style={{ marginTop: '1.5px' }}><strong>नोट :</strong> {schedule.note_hindi}</div>}
         </div>
       )}
     </div>
   );
 };
 
-const thStyle = (compact) => ({
+const thStyle = (compact, width = 'auto') => ({
   border: '1px solid #000',
-  padding: compact ? '2px 4px' : '6px 8px',
-  fontWeight: '700',
+  padding: compact ? '2px 4px' : '5px 7px',
+  fontWeight: '800',
   textAlign: 'center',
-  fontSize: compact ? '7.5px' : '11px',
+  fontSize: compact ? '7px' : '10.5px',
+  width: width,
 });
 
 const tdStyle = (compact) => ({
   border: '1px solid #000',
-  padding: compact ? '2px 4px' : '5px 8px',
-  textAlign: 'center',
-  fontSize: compact ? '8px' : '11px',
+  padding: compact ? '2px 4px' : '4.5px 7px',
+  fontSize: compact ? '7.5px' : '10.5px',
 });
 
 
@@ -403,7 +503,6 @@ const AdmitCard = () => {
     setTimeout(() => setMessage({ text: '', type: '' }), 5000);
   };
 
-  // Fetch classes on mount
   useEffect(() => {
     const fetchClasses = async () => {
       try {
@@ -422,7 +521,6 @@ const AdmitCard = () => {
     fetchClasses();
   }, []);
 
-  // Fetch existing exam schedules
   useEffect(() => {
     fetchSchedules();
   }, [activeTab, selectedAcademicYear]);
@@ -449,8 +547,6 @@ const AdmitCard = () => {
     }
   };
 
-  // ──── SUBJECT ROW CONTROLS ────
-
   const addSubjectRow = (subjName = '') => {
     setSubjectRows(prev => [...prev, emptySubjectRow(subjName)]);
   };
@@ -463,8 +559,6 @@ const AdmitCard = () => {
   const updateSubjectRow = (idx, field, value) => {
     setSubjectRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
   };
-
-  // ──── SAVE SCHEDULE ────
 
   const saveSchedule = async () => {
     if (!formClass) return showMsg('Please select a class', 'error');
@@ -490,13 +584,11 @@ const AdmitCard = () => {
       showMsg('Exam schedule saved successfully! You can now preview and print admit cards.', 'success');
       fetchSchedules();
     } catch (e) {
-      showMsg(e.message || 'Failed to save schedule. Check database connection.', 'error');
+      showMsg(e.message || 'Failed to save schedule', 'error');
     } finally {
       setSaving(false);
     }
   };
-
-  // ──── EDIT / DELETE SCHEDULE ────
 
   const loadScheduleForEdit = async (scheduleId) => {
     try {
@@ -545,8 +637,6 @@ const AdmitCard = () => {
     }
   };
 
-  // ──── GENERATE ADMIT CARDS ────
-
   const generateCards = async (scheduleId) => {
     if (!scheduleId) return;
     setGenerating(true);
@@ -564,8 +654,6 @@ const AdmitCard = () => {
       setGenerating(false);
     }
   };
-
-  // ──── PRINT HANDLERS ────
 
   const handlePrintSingle = () => {
     const currentStudent = admitCardData?.students?.[selectedStudentIdx];
@@ -591,7 +679,6 @@ const AdmitCard = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 no-print-wrapper">
-      {/* Datalist for instant subject auto-completion */}
       <datalist id="common-subjects-list">
         {ALL_COMMON_SUBJECTS.map((s, idx) => (
           <option key={idx} value={s} />
@@ -608,7 +695,7 @@ const AdmitCard = () => {
             Admit Card Generator
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Configure exam dates & subjects class-wise, then preview or batch-print admit cards.
+            Configure exam dates & subjects class-wise, then preview or batch-print admit cards with official school letterhead.
           </p>
         </div>
       </div>
@@ -880,7 +967,6 @@ const AdmitCard = () => {
       {/* ═══════════════ TAB 2: PREVIEW & PRINT SINGLE ═══════════════ */}
       {activeTab === 'preview' && (
         <div className="space-y-6">
-          {/* Select Schedule Picker */}
           <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[260px]">
               <label className="text-xs font-semibold text-gray-700 block mb-1.5">Select Class Exam Schedule</label>
@@ -911,7 +997,7 @@ const AdmitCard = () => {
 
           {admitCardData && admitCardData.students.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Student list (left sidebar) */}
+              {/* Student List (Left Sidebar) */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden lg:col-span-1 flex flex-col h-[650px]">
                 <div className="p-4 border-b border-gray-100 bg-gray-50">
                   <p className="font-bold text-gray-800 text-sm">{admitCardData.total_students} Students in {admitCardData.schedule.class_name}</p>
@@ -953,7 +1039,7 @@ const AdmitCard = () => {
                 </div>
               </div>
 
-              {/* Card Preview (right panel) */}
+              {/* Card Preview (Right Panel) */}
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex flex-wrap justify-between items-center bg-white p-4 rounded-2xl border border-gray-200 shadow-sm gap-3">
                   <div className="flex items-center gap-2">
@@ -984,7 +1070,7 @@ const AdmitCard = () => {
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer"
                   >
                     <Printer size={16} />
-                    Print This Single Card
+                    Print Single Admit Card
                   </button>
                 </div>
 
@@ -992,7 +1078,6 @@ const AdmitCard = () => {
                   <AdmitCardTemplate
                     student={admitCardData.students[selectedStudentIdx]}
                     schedule={admitCardData.schedule}
-                    schoolName={admitCardData.school_name}
                   />
                 </div>
               </div>
@@ -1019,7 +1104,6 @@ const AdmitCard = () => {
       {/* ═══════════════ TAB 3: BULK PRINT (CLASS-WISE) ═══════════════ */}
       {activeTab === 'bulk' && (
         <div className="space-y-6">
-          {/* Schedule Selector */}
           <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 flex flex-wrap gap-4 items-end justify-between">
             <div className="flex-1 min-w-[260px]">
               <label className="text-xs font-semibold text-gray-700 block mb-1.5">Select Class Schedule for Bulk Print</label>
@@ -1069,7 +1153,6 @@ const AdmitCard = () => {
                 <span className="text-xs text-emerald-700 font-normal">Arranged 2 cards per page (A4 layout)</span>
               </div>
 
-              {/* Bulk Cards Grid */}
               <div id="print-area-bulk" className="print-area">
                 <div className="admit-card-bulk-grid">
                   {admitCardData.students.map((student, idx) => (
@@ -1077,7 +1160,6 @@ const AdmitCard = () => {
                       key={student.adm_no}
                       student={student}
                       schedule={admitCardData.schedule}
-                      schoolName={admitCardData.school_name}
                       compact={true}
                     />
                   ))}
