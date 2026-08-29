@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, Plus, Trash2, Save, Printer, Eye, Users, 
   Calendar, BookOpen, AlertCircle, RefreshCw, Search,
-  CheckCircle, Sparkles, HelpCircle
+  CheckCircle, Sparkles, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import api from '../services/api';
 import { useAppContext } from '../context/AppContext';
@@ -20,7 +20,7 @@ const CLASS_SUBJECT_PRESETS = {
   // Middle School (Class 6 to 8): Sanskrit is present, Social Science
   middle: ['Hindi', 'English', 'Maths', 'Sanskrit', 'Science', 'Social Science', 'Computer'],
   
-  // High School (Class 9 to 10): NO Sanskrit! Core subjects + IT/Computer / AI / Physical Ed
+  // High School (Class 9 to 10): NO Sanskrit! Core subjects + IT/Computer / Physical Ed
   secondary: ['Hindi', 'English', 'Maths', 'Science', 'Social Science', 'Information Technology', 'Physical Education'],
   
   // Senior Secondary (Class 11 to 12): NO Sanskrit! Science / Commerce streams
@@ -50,7 +50,7 @@ export const getSubjectsForClass = (className) => {
     return CLASS_SUBJECT_PRESETS.pre_primary;
   }
 
-  // Roman Numerals check
+  // Roman Numerals & standard class strings
   if (/\b(XII|12TH|12)\b/.test(raw) || clean.includes('12') || clean.includes('XII')) {
     return CLASS_SUBJECT_PRESETS.senior_science;
   }
@@ -94,14 +94,109 @@ const emptySubjectRow = (subj = '') => ({
   room_no: ''
 });
 
+/**
+ * Robust, High-Fidelity Print Handler
+ * Creates an isolated print document so app headers/sidebars are never printed.
+ */
+const printElementContent = (elementId, docTitle = 'Admit Card') => {
+  const contentElem = document.getElementById(elementId);
+  if (!contentElem) {
+    window.print();
+    return;
+  }
+
+  // Create an invisible iframe for flawless printing
+  let iframe = document.getElementById('admit-card-print-iframe');
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.id = 'admit-card-print-iframe';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+  }
+
+  const iframeDoc = iframe.contentWindow || iframe.contentDocument;
+  const doc = iframeDoc.document || iframeDoc;
+
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>${docTitle}</title>
+        <style>
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          body {
+            margin: 0;
+            padding: ${elementId === 'print-area-single' ? '20px 40px' : '0'};
+            font-family: Arial, Helvetica, sans-serif;
+            background: #fff;
+            color: #000;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 6mm;
+          }
+          .admit-card-template {
+            border: 2px solid #000 !important;
+            box-shadow: none !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            background: #fff !important;
+          }
+          .admit-card-bulk-grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 10px !important;
+            padding: 4px !important;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          th, td {
+            border: 1px solid #000 !important;
+          }
+          @media print {
+            body { padding: 0 !important; }
+          }
+        </style>
+      </head>
+      <body>
+        ${contentElem.innerHTML}
+      </body>
+    </html>
+  `);
+  doc.close();
+
+  setTimeout(() => {
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch (e) {
+      console.error('Print iframe error, falling back to window.print()', e);
+      window.print();
+    }
+  }, 400);
+};
+
 // ─────────────────────────────────────────────────────────────
-// Single Admit Card Component (Used for Individual & Bulk)
+// Single Admit Card Component
 // ─────────────────────────────────────────────────────────────
 const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) => {
+  if (!student || !schedule) return null;
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     try {
-      // Handle YYYY-MM-DD or ISO string
       const clean = dateStr.toString().split('T')[0];
       const parts = clean.split('-');
       if (parts.length === 3 && parts[0].length === 4) {
@@ -125,7 +220,7 @@ const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) =
   const cardStyle = compact ? {
     fontSize: '9px',
     padding: '10px 14px',
-    border: '2px solid #1f2937',
+    border: '2px solid #000',
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
     marginBottom: '8px',
@@ -134,7 +229,7 @@ const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) =
   } : {
     fontSize: '13px',
     padding: '24px 28px',
-    border: '2px solid #1f2937',
+    border: '2px solid #000',
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
     marginBottom: '16px',
@@ -146,7 +241,7 @@ const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) =
 
   return (
     <div style={cardStyle} className="admit-card-template shadow-sm">
-      {/* Header */}
+      {/* School Header */}
       <div style={{ textAlign: 'center', marginBottom: compact ? '6px' : '14px' }}>
         <div style={{ fontWeight: '800', fontSize: compact ? '12px' : '18px', letterSpacing: '1px', textTransform: 'uppercase' }}>
           {schoolName || 'NEW SAINIK PUBLIC SCHOOL'}
@@ -159,7 +254,7 @@ const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) =
         </div>
       </div>
 
-      {/* Student Info */}
+      {/* Student Details */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: compact ? '6px' : '12px', gap: '12px' }}>
         <div style={{ flex: 1, lineHeight: compact ? '1.3' : '1.6' }}>
           <div style={{ display: 'flex', gap: '16px', marginBottom: '3px', flexWrap: 'wrap' }}>
@@ -174,7 +269,7 @@ const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) =
             <strong>Admission No.</strong>&nbsp;&nbsp;:&nbsp;&nbsp;{student.adm_no || '—'}
           </div>
         </div>
-        {/* Photo Box */}
+        {/* Photo Placeholder */}
         <div style={{
           width: compact ? '42px' : '68px',
           height: compact ? '50px' : '80px',
@@ -192,7 +287,7 @@ const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) =
         </div>
       </div>
 
-      {/* Subject Table */}
+      {/* Subjects Timetable */}
       <table style={{
         width: '100%',
         borderCollapse: 'collapse',
@@ -235,16 +330,16 @@ const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) =
         fontSize: compact ? '8.5px' : '12px',
       }}>
         <div>
-          <div style={{ borderTop: '1px solid #1f2937', width: compact ? '85px' : '140px', marginBottom: '4px' }}></div>
+          <div style={{ borderTop: '1px solid #000', width: compact ? '85px' : '140px', marginBottom: '4px' }}></div>
           Sign. Class Teacher
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ borderTop: '1px solid #1f2937', width: compact ? '85px' : '140px', marginBottom: '4px', marginLeft: 'auto' }}></div>
+          <div style={{ borderTop: '1px solid #000', width: compact ? '85px' : '140px', marginBottom: '4px', marginLeft: 'auto' }}></div>
           Sign. Principal
         </div>
       </div>
 
-      {/* Notes Section */}
+      {/* Footer Notes */}
       {(schedule.note_english || schedule.note_hindi) && (
         <div style={{
           fontSize: compact ? '6.5px' : '10.5px',
@@ -262,7 +357,7 @@ const AdmitCardTemplate = ({ student, schedule, schoolName, compact = false }) =
 };
 
 const thStyle = (compact) => ({
-  border: '1px solid #1f2937',
+  border: '1px solid #000',
   padding: compact ? '2px 4px' : '6px 8px',
   fontWeight: '700',
   textAlign: 'center',
@@ -270,7 +365,7 @@ const thStyle = (compact) => ({
 });
 
 const tdStyle = (compact) => ({
-  border: '1px solid #1f2937',
+  border: '1px solid #000',
   padding: compact ? '2px 4px' : '5px 8px',
   textAlign: 'center',
   fontSize: compact ? '8px' : '11px',
@@ -288,7 +383,7 @@ const AdmitCard = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
-  // Form State for Schedule Creation
+  // Form State
   const [formClass, setFormClass] = useState('');
   const [formExamType, setFormExamType] = useState(EXAM_TYPES[0]);
   const [formNoteEn, setFormNoteEn] = useState('The examination result will be declared on the 20th March 2026 and New Session will start from 23 March 2026, Monday.');
@@ -308,7 +403,7 @@ const AdmitCard = () => {
     setTimeout(() => setMessage({ text: '', type: '' }), 5000);
   };
 
-  // 1. Fetch available classes on mount
+  // Fetch classes on mount
   useEffect(() => {
     const fetchClasses = async () => {
       try {
@@ -327,7 +422,7 @@ const AdmitCard = () => {
     fetchClasses();
   }, []);
 
-  // 2. Fetch existing exam schedules
+  // Fetch existing exam schedules
   useEffect(() => {
     fetchSchedules();
   }, [activeTab, selectedAcademicYear]);
@@ -341,19 +436,15 @@ const AdmitCard = () => {
     }
   };
 
-  // Helper to load default subjects for a given class
   const loadDefaultSubjectsForClass = (clsName) => {
     const defaultList = getSubjectsForClass(clsName);
     setSubjectRows(defaultList.map(s => emptySubjectRow(s)));
   };
 
-  // When admin changes class dropdown:
   const handleClassChange = (newClass) => {
     setFormClass(newClass);
-    // Check if user has entered dates on any row
     const hasEnteredData = subjectRows.some(r => r.exam_date || r.room_no);
     if (!hasEnteredData) {
-      // Auto-update subjects based on grade (e.g. removes Sanskrit for Class 9/10)
       loadDefaultSubjectsForClass(newClass);
     }
   };
@@ -373,18 +464,11 @@ const AdmitCard = () => {
     setSubjectRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
   };
 
-  // Apply start/end time or date to all rows at once
-  const applyTimeToAll = (field, value) => {
-    if (!value) return;
-    setSubjectRows(prev => prev.map(r => ({ ...r, [field]: value })));
-  };
-
   // ──── SAVE SCHEDULE ────
 
   const saveSchedule = async () => {
     if (!formClass) return showMsg('Please select a class', 'error');
     
-    // Validate rows
     const validSubjects = subjectRows.filter(s => s.subject && s.subject.trim());
     if (validSubjects.length === 0) return showMsg('Please enter at least one subject', 'error');
 
@@ -481,8 +565,17 @@ const AdmitCard = () => {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  // ──── PRINT HANDLERS ────
+
+  const handlePrintSingle = () => {
+    const currentStudent = admitCardData?.students?.[selectedStudentIdx];
+    const studentName = currentStudent ? currentStudent.name : 'Student';
+    printElementContent('print-area-single', `Admit Card - ${studentName}`);
+  };
+
+  const handlePrintBulk = () => {
+    const className = admitCardData?.schedule?.class_name || 'Class';
+    printElementContent('print-area-bulk', `Admit Cards - ${className}`);
   };
 
   const filteredStudents = admitCardData?.students?.filter(s =>
@@ -498,7 +591,7 @@ const AdmitCard = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 no-print-wrapper">
-      {/* Datalist for fast subject auto-completion */}
+      {/* Datalist for instant subject auto-completion */}
       <datalist id="common-subjects-list">
         {ALL_COMMON_SUBJECTS.map((s, idx) => (
           <option key={idx} value={s} />
@@ -526,7 +619,7 @@ const AdmitCard = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === tab.id
                 ? 'bg-white text-indigo-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/60'
@@ -619,7 +712,7 @@ const AdmitCard = () => {
                 <button 
                   type="button"
                   onClick={() => loadDefaultSubjectsForClass(formClass)} 
-                  className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border border-indigo-200"
+                  className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border border-indigo-200 cursor-pointer"
                   title="Reset subjects to default recommendations for this class"
                 >
                   <Sparkles size={13} />
@@ -628,7 +721,7 @@ const AdmitCard = () => {
                 <button 
                   type="button"
                   onClick={() => addSubjectRow()} 
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
                 >
                   <Plus size={14} /> Add Row
                 </button>
@@ -701,7 +794,7 @@ const AdmitCard = () => {
                         <button 
                           type="button"
                           onClick={() => removeSubjectRow(i)} 
-                          className="text-gray-400 hover:text-rose-600 transition-colors p-1.5 rounded-lg hover:bg-rose-50"
+                          className="text-gray-400 hover:text-rose-600 transition-colors p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
                           title="Remove this subject row"
                         >
                           <Trash2 size={16} />
@@ -764,7 +857,7 @@ const AdmitCard = () => {
               </h3>
               <button 
                 onClick={fetchSchedules} 
-                className="text-xs text-indigo-600 font-semibold flex items-center gap-1 hover:text-indigo-800"
+                className="text-xs text-indigo-600 font-semibold flex items-center gap-1 hover:text-indigo-800 cursor-pointer"
               >
                 <RefreshCw size={12} /> Refresh
               </button>
@@ -862,16 +955,36 @@ const AdmitCard = () => {
 
               {/* Card Preview (right panel) */}
               <div className="lg:col-span-2 space-y-4">
-                <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-                  <div className="text-xs text-gray-500">
-                    Viewing: <strong className="text-gray-900">{admitCardData.students[selectedStudentIdx]?.name}</strong>
+                <div className="flex flex-wrap justify-between items-center bg-white p-4 rounded-2xl border border-gray-200 shadow-sm gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={selectedStudentIdx <= 0}
+                      onClick={() => setSelectedStudentIdx(prev => Math.max(0, prev - 1))}
+                      className="p-2 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40 cursor-pointer text-gray-700"
+                      title="Previous Student"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="text-xs font-semibold text-gray-700">
+                      Student {selectedStudentIdx + 1} of {admitCardData.total_students}
+                    </span>
+                    <button
+                      disabled={selectedStudentIdx >= admitCardData.total_students - 1}
+                      onClick={() => setSelectedStudentIdx(prev => Math.min(admitCardData.total_students - 1, prev + 1))}
+                      className="p-2 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40 cursor-pointer text-gray-700"
+                      title="Next Student"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
                   </div>
+
                   <button 
-                    onClick={handlePrint} 
+                    type="button"
+                    onClick={handlePrintSingle} 
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer"
                   >
                     <Printer size={16} />
-                    Print Single Admit Card
+                    Print This Single Card
                   </button>
                 </div>
 
@@ -929,7 +1042,8 @@ const AdmitCard = () => {
 
             {admitCardData && admitCardData.students.length > 0 && (
               <button 
-                onClick={handlePrint} 
+                type="button"
+                onClick={handlePrintBulk} 
                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer"
               >
                 <Printer size={18} />
@@ -981,61 +1095,6 @@ const AdmitCard = () => {
           )}
         </div>
       )}
-
-      {/* ═══════════════ PRINT STYLES ═══════════════ */}
-      <style>{`
-        @media print {
-          /* Hide non-printable app UI */
-          body * {
-            visibility: hidden !important;
-          }
-          .print-area, .print-area * {
-            visibility: visible !important;
-          }
-          .print-area {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          .no-print-wrapper > *:not(.print-area):not(:has(.print-area)) {
-            display: none !important;
-          }
-
-          /* 2 Cards Per Page Grid */
-          .admit-card-bulk-grid {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 10px !important;
-            padding: 2px !important;
-          }
-          .admit-card-template {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            box-shadow: none !important;
-            border: 2px solid #000 !important;
-          }
-
-          @page {
-            margin: 6mm;
-            size: A4 portrait;
-          }
-        }
-
-        /* Screen Preview for Bulk */
-        .admit-card-bulk-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 16px;
-        }
-        @media (max-width: 900px) {
-          .admit-card-bulk-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
     </div>
   );
 };

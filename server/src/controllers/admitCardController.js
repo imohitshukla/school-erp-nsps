@@ -1,12 +1,12 @@
 const db = require('../db');
 const logger = require('../utils/logger');
 
-// ======================= AUTO-MIGRATE (self-healing) =======================
-// Creates tables if they don't exist — runs once on first API call.
+// ======================= AUTO-MIGRATE (Self-Healing) =======================
 let migrated = false;
 const ensureTables = async () => {
   if (migrated) return;
   try {
+    // 1. Create exam schedules & subjects tables
     await db.query(`
       CREATE TABLE IF NOT EXISTS exam_schedules (
         id SERIAL PRIMARY KEY,
@@ -34,11 +34,23 @@ const ensureTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_es_school ON exam_schedules (school_id, academic_year);
       CREATE INDEX IF NOT EXISTS idx_ess_sched ON exam_schedule_subjects (schedule_id);
     `);
+
+    // 2. Safely ensure students table has father_name and section columns
+    await db.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='section') THEN
+          ALTER TABLE students ADD COLUMN section VARCHAR(10);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='father_name') THEN
+          ALTER TABLE students ADD COLUMN father_name VARCHAR(100);
+        END IF;
+      END $$;
+    `);
+
     migrated = true;
-    logger.info('Admit card tables ensured.');
+    logger.info('Admit card tables and schema verified.');
   } catch (err) {
     logger.error('Auto-migrate admit card tables failed:', err.message);
-    // Don't block — tables might already exist with slightly different DDL
     migrated = true;
   }
 };
@@ -169,44 +181,58 @@ exports.generateAdmitCards = async (req, res) => {
   await ensureTables();
   const { scheduleId } = req.params;
   try {
-    // Get the schedule
+    // 1. Get the exam schedule
     const scheduleRes = await db.query(
       'SELECT * FROM exam_schedules WHERE id = $1 AND school_id = $2',
       [scheduleId, req.user.school_id]
     );
     if (scheduleRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Schedule not found' });
+      return res.status(404).json({ error: 'Exam schedule not found' });
     }
     const schedule = scheduleRes.rows[0];
 
-    // Get subjects
+    // 2. Get the subjects list for this schedule
     const subjectsRes = await db.query(
-      'SELECT * FROM exam_schedule_subjects WHERE schedule_id = $1 ORDER BY serial_no',
+      'SELECT * FROM exam_schedule_subjects WHERE schedule_id = $1 ORDER BY serial_no ASC',
       [schedule.id]
     );
 
-    // Get students for that class — use COALESCE for columns that may not exist
+    // 3. Query students using SELECT * to safely support all schema variations
     const studentsRes = await db.query(
-      `SELECT id, adm_no, name, 
-              COALESCE(father_name, '') as father_name, 
-              class_name, 
-              COALESCE(section, '') as section
-       FROM students 
+      `SELECT * FROM students 
        WHERE class_name = $1 AND school_id = $2
        ORDER BY name ASC`,
       [schedule.class_name, req.user.school_id]
     );
 
-    // Get school name
-    const schoolRes = await db.query('SELECT name FROM schools WHERE id = $1', [req.user.school_id]);
-    const schoolName = schoolRes.rows.length > 0 ? schoolRes.rows[0].name : 'School';
+    // 4. Map students with safe defaults for father_name, section, roll_no
+    const students = studentsRes.rows.map(s => ({
+      id: s.id,
+      adm_no: s.adm_no,
+      name: s.name,
+      father_name: s.father_name || s.father || s.parent_name || '',
+      class_name: s.class_name,
+      section: s.section || '',
+      gender: s.gender || '',
+    }));
+
+    // 5. Get school name
+    let schoolName = 'NEW SAINIK PUBLIC SCHOOL';
+    try {
+      const schoolRes = await db.query('SELECT name FROM schools WHERE id = $1', [req.user.school_id]);
+      if (schoolRes.rows.length > 0 && schoolRes.rows[0].name) {
+        schoolName = schoolRes.rows[0].name;
+      }
+    } catch (_) {
+      // Fallback
+    }
 
     res.status(200).json({
       data: {
         school_name: schoolName,
         schedule: { ...schedule, subjects: subjectsRes.rows },
-        students: studentsRes.rows,
-        total_students: studentsRes.rows.length
+        students: students,
+        total_students: students.length
       }
     });
   } catch (error) {
