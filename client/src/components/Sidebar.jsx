@@ -14,6 +14,7 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
     { name: 'Expense Management', path: '/expenses', icon: Tags },
     { name: 'Visitor Log', path: '/visitors', icon: ClipboardCheck },
     { name: 'Academic', path: '/academic', icon: BookOpen },
+    { name: 'Admit Cards', path: '/admit-cards', icon: FileText },
     { name: 'Administration', path: '/admin', icon: Settings },
     { name: 'Communication', path: '/communication', icon: MessageSquare },
     { name: 'Financial', path: '/fees/dashboard', icon: IndianRupee },

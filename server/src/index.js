@@ -25,6 +25,7 @@ const communicationRoutes = require('./routes/communicationRoutes');
 const academicRoutes = require('./routes/academicRoutes');
 const staffRoutes = require('./routes/staffRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const admitCardRoutes = require('./routes/admitCardRoutes');
 
 // Mount Routes
 app.use('/api/tenant', tenantRoutes);
@@ -36,6 +37,7 @@ app.use('/api/communications', authMiddleware, communicationRoutes);
 app.use('/api/academics', authMiddleware, academicRoutes);
 app.use('/api/staff', authMiddleware, staffRoutes);
 app.use('/api/admin', authMiddleware, adminRoutes);
+app.use('/api/admit-cards', authMiddleware, admitCardRoutes);
 
 
 // Health Check

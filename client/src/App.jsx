@@ -23,6 +23,7 @@ import Admission from './pages/Admission';
 import StaffManagement from './pages/StaffManagement';
 import ExpenseManagement from './pages/ExpenseManagement';
 import VisitorLog from './pages/VisitorLog';
+import AdmitCard from './pages/AdmitCard';
 function App() {
   return (
     <AppProvider>
@@ -55,6 +56,7 @@ function App() {
             <Route path="staff-hr" element={<StaffManagement />} />
             <Route path="expenses" element={<ExpenseManagement />} />
             <Route path="visitors" element={<VisitorLog />} />
+            <Route path="admit-cards" element={<AdmitCard />} />
             
             {/* Placeholder routes for incomplete features */}
             <Route path="setup" element={<PlaceholderPage />} />
