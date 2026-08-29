@@ -1,9 +1,52 @@
 const db = require('../db');
 const logger = require('../utils/logger');
 
+// ======================= AUTO-MIGRATE (self-healing) =======================
+// Creates tables if they don't exist — runs once on first API call.
+let migrated = false;
+const ensureTables = async () => {
+  if (migrated) return;
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS exam_schedules (
+        id SERIAL PRIMARY KEY,
+        school_id INTEGER NOT NULL,
+        class_name VARCHAR(50) NOT NULL,
+        exam_type VARCHAR(50) NOT NULL,
+        academic_year VARCHAR(20) NOT NULL,
+        note_english TEXT DEFAULT '',
+        note_hindi TEXT DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(school_id, class_name, exam_type, academic_year)
+      );
+      CREATE TABLE IF NOT EXISTS exam_schedule_subjects (
+        id SERIAL PRIMARY KEY,
+        schedule_id INTEGER NOT NULL REFERENCES exam_schedules(id) ON DELETE CASCADE,
+        serial_no INTEGER NOT NULL,
+        subject VARCHAR(100) NOT NULL,
+        exam_date DATE NOT NULL,
+        start_time VARCHAR(20) NOT NULL,
+        end_time VARCHAR(20) NOT NULL,
+        room_no VARCHAR(20) DEFAULT '',
+        UNIQUE(schedule_id, serial_no)
+      );
+      CREATE INDEX IF NOT EXISTS idx_es_school ON exam_schedules (school_id, academic_year);
+      CREATE INDEX IF NOT EXISTS idx_ess_sched ON exam_schedule_subjects (schedule_id);
+    `);
+    migrated = true;
+    logger.info('Admit card tables ensured.');
+  } catch (err) {
+    logger.error('Auto-migrate admit card tables failed:', err.message);
+    // Don't block — tables might already exist with slightly different DDL
+    migrated = true;
+  }
+};
+
 // ======================= CREATE / UPDATE EXAM SCHEDULE =======================
 
 exports.createSchedule = async (req, res) => {
+  await ensureTables();
   const { class_name, exam_type, academic_year, note_english, note_hindi, subjects } = req.body;
 
   if (!class_name || !exam_type || !academic_year || !Array.isArray(subjects) || subjects.length === 0) {
@@ -53,7 +96,7 @@ exports.createSchedule = async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Error creating exam schedule:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message || 'Internal server error' });
   } finally {
     client.release();
   }
@@ -62,6 +105,7 @@ exports.createSchedule = async (req, res) => {
 // ======================= LIST SCHEDULES =======================
 
 exports.getSchedules = async (req, res) => {
+  await ensureTables();
   const { class_name, exam_type, academic_year } = req.query;
   try {
     let query = `SELECT es.*, 
@@ -88,13 +132,14 @@ exports.getSchedules = async (req, res) => {
     res.status(200).json({ data: result.rows });
   } catch (error) {
     logger.error('Error fetching exam schedules:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };
 
 // ======================= GET SINGLE SCHEDULE =======================
 
 exports.getScheduleById = async (req, res) => {
+  await ensureTables();
   const { id } = req.params;
   try {
     const scheduleRes = await db.query(
@@ -114,13 +159,14 @@ exports.getScheduleById = async (req, res) => {
     res.status(200).json({ data: { ...schedule, subjects: subjectsRes.rows } });
   } catch (error) {
     logger.error('Error fetching schedule:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };
 
 // ======================= GENERATE ADMIT CARDS =======================
 
 exports.generateAdmitCards = async (req, res) => {
+  await ensureTables();
   const { scheduleId } = req.params;
   try {
     // Get the schedule
@@ -139,9 +185,12 @@ exports.generateAdmitCards = async (req, res) => {
       [schedule.id]
     );
 
-    // Get students for that class
+    // Get students for that class — use COALESCE for columns that may not exist
     const studentsRes = await db.query(
-      `SELECT id, adm_no, name, father_name, class_name, section
+      `SELECT id, adm_no, name, 
+              COALESCE(father_name, '') as father_name, 
+              class_name, 
+              COALESCE(section, '') as section
        FROM students 
        WHERE class_name = $1 AND school_id = $2
        ORDER BY name ASC`,
@@ -162,13 +211,14 @@ exports.generateAdmitCards = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error generating admit cards:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };
 
 // ======================= DELETE SCHEDULE =======================
 
 exports.deleteSchedule = async (req, res) => {
+  await ensureTables();
   const { id } = req.params;
   try {
     const result = await db.query(
@@ -181,6 +231,6 @@ exports.deleteSchedule = async (req, res) => {
     res.status(200).json({ message: 'Schedule deleted successfully' });
   } catch (error) {
     logger.error('Error deleting schedule:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 };
