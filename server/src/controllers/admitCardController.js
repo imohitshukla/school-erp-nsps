@@ -44,6 +44,9 @@ const ensureTables = async () => {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='father_name') THEN
           ALTER TABLE students ADD COLUMN father_name VARCHAR(100);
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='photo_url') THEN
+          ALTER TABLE students ADD COLUMN photo_url VARCHAR(500);
+        END IF;
       END $$;
     `);
 
@@ -214,6 +217,7 @@ exports.generateAdmitCards = async (req, res) => {
       class_name: s.class_name,
       section: s.section || '',
       gender: s.gender || '',
+      photo_url: s.photo_url || s.photo || '',
     }));
 
     // 5. Get school name

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FileText, Plus, Trash2, Save, Printer, Eye, Users, 
   Calendar, BookOpen, AlertCircle, RefreshCw, Search,
-  CheckCircle, Sparkles, ChevronLeft, ChevronRight
+  CheckCircle, Sparkles, ChevronLeft, ChevronRight, Upload, Camera, Image
 } from 'lucide-react';
 import api from '../services/api';
 import { useAppContext } from '../context/AppContext';
@@ -11,24 +11,14 @@ const EXAM_TYPES = ['HALF YEARLY', 'ANNUAL', 'PT1', 'PT2', 'PRE-BOARD', 'UNIT TE
 
 // Class-specific subject presets
 const CLASS_SUBJECT_PRESETS = {
-  // Pre-Primary (Nursery, LKG, UKG, Playgroup)
   pre_primary: ['English', 'Hindi', 'Mathematics', 'General Knowledge', 'Drawing & Art', 'Rhymes & Oral'],
-  
-  // Primary (Class 1 to 5): Includes Sanskrit, EVS/Science, GK
   primary: ['Hindi', 'English', 'Maths', 'Sanskrit', 'General Knowledge', 'Science', 'Computer', 'SST'],
-  
-  // Middle School (Class 6 to 8): Sanskrit is present, Social Science
   middle: ['Hindi', 'English', 'Maths', 'Sanskrit', 'Science', 'Social Science', 'Computer'],
-  
-  // High School (Class 9 to 10): NO Sanskrit! Core subjects + IT/Computer / Physical Ed
   secondary: ['Hindi', 'English', 'Maths', 'Science', 'Social Science', 'Information Technology', 'Physical Education'],
-  
-  // Senior Secondary (Class 11 to 12): NO Sanskrit! Science / Commerce streams
   senior_science: ['English', 'Physics', 'Chemistry', 'Mathematics', 'Biology', 'Physical Education', 'Computer Science'],
   senior_commerce: ['English', 'Accountancy', 'Business Studies', 'Economics', 'Mathematics', 'Physical Education'],
 };
 
-// All common subject names for auto-suggestions / datalist
 const ALL_COMMON_SUBJECTS = [
   'Hindi', 'English', 'Mathematics', 'Maths', 'Science', 'Social Science', 'SST',
   'Sanskrit', 'Computer', 'Information Technology', 'General Knowledge', 'GK',
@@ -37,9 +27,6 @@ const ALL_COMMON_SUBJECTS = [
   'Environmental Studies (EVS)', 'Moral Science', 'Music'
 ];
 
-/**
- * Detects grade level from class string (e.g., "Class 10", "10th A", "IX", "5th", "LKG", "UKG")
- */
 export const getSubjectsForClass = (className) => {
   if (!className) return CLASS_SUBJECT_PRESETS.primary;
   const raw = className.toString().trim().toUpperCase();
@@ -92,7 +79,8 @@ const emptySubjectRow = (subj = '') => ({
 });
 
 /**
- * Robust Isolated Print Engine
+ * Strict Half-A4 Isolated Print Engine
+ * Enforces exact height limits so each admit card takes strictly half of an A4 paper (max 136mm height).
  */
 const printElementContent = (elementId, docTitle = 'Admit Card') => {
   const contentElem = document.getElementById(elementId);
@@ -131,27 +119,35 @@ const printElementContent = (elementId, docTitle = 'Admit Card') => {
           }
           body {
             margin: 0;
-            padding: ${elementId === 'print-area-single' ? '12mm 16mm' : '0'};
+            padding: 0;
             font-family: Arial, Helvetica, sans-serif;
             background: #fff;
             color: #000;
           }
           @page {
             size: A4 portrait;
-            margin: 5mm;
+            margin: 5mm 6mm;
           }
+          /* STRICT HALF-A4 HEIGHT LIMIT (Max 136mm) */
           .admit-card-template {
             border: 2px solid #000 !important;
             box-shadow: none !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
             background: #fff !important;
+            max-height: 136mm !important;
+            height: auto !important;
+            overflow: hidden !important;
+            margin: 0 auto 5mm auto !important;
           }
+          /* Bulk mode: exactly 2 cards stack vertically on 1 A4 page */
           .admit-card-bulk-grid {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 8px !important;
-            padding: 2px !important;
+            display: block !important;
+          }
+          .admit-card-bulk-grid .admit-card-template:nth-child(2n) {
+            margin-bottom: 0 !important;
+            page-break-after: always !important;
+            break-after: page !important;
           }
           table {
             width: 100%;
@@ -188,9 +184,9 @@ const printElementContent = (elementId, docTitle = 'Admit Card') => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// Single Admit Card Template Component
+// Single Admit Card Template Component (Strict Half-A4 Format)
 // ─────────────────────────────────────────────────────────────
-const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
+const AdmitCardTemplate = ({ student, schedule, compact = false, onUploadPhotoClick }) => {
   if (!student || !schedule) return null;
 
   const formatDate = (dateStr) => {
@@ -214,27 +210,30 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
 
   const acadYear = schedule.academic_year || '2026-2027';
 
-  const cardStyle = compact ? {
-    fontSize: '8.5px',
-    padding: '8px 12px',
+  // Strict Half-A4 sizing styles
+  const cardStyle = {
+    fontSize: compact ? '8px' : '9.5px',
+    padding: compact ? '6px 10px' : '10px 16px',
     border: '2px solid #000',
     pageBreakInside: 'avoid',
     breakInside: 'avoid',
-    marginBottom: '6px',
+    marginBottom: compact ? '4mm' : '12px',
     background: '#fff',
     color: '#000',
-  } : {
-    fontSize: '12.5px',
-    padding: '18px 24px',
-    border: '2px solid #000',
-    pageBreakInside: 'avoid',
-    breakInside: 'avoid',
-    marginBottom: '16px',
-    background: '#fff',
-    maxWidth: '720px',
-    margin: '0 auto 16px auto',
-    color: '#000',
+    maxWidth: '680px',
+    margin: '0 auto',
+    boxSizing: 'border-box'
   };
+
+  // Resolve student photo url (handles relative URLs or API uploads)
+  const getFullPhotoUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    const base = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const studentPhotoUrl = getFullPhotoUrl(student.photo_url);
 
   return (
     <div style={cardStyle} className="admit-card-template shadow-xs">
@@ -245,9 +244,9 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
         alignItems: 'center',
         justifyContent: 'space-between',
         borderBottom: '1.5px solid #000',
-        paddingBottom: compact ? '5px' : '10px',
-        marginBottom: compact ? '6px' : '12px',
-        gap: compact ? '6px' : '12px',
+        paddingBottom: compact ? '3px' : '6px',
+        marginBottom: compact ? '4px' : '8px',
+        gap: compact ? '6px' : '10px',
       }}>
         
         {/* TOP LEFT: School Building Photo */}
@@ -255,12 +254,12 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
           <img 
             src="/new_building.jpg" 
             alt="School Building"
-            onError={(e) => { e.target.src = '/new_building.jpg'; }}
+            onError={(e) => { e.target.src = '/building.jpeg'; }}
             style={{
-              width: compact ? '52px' : '82px',
-              height: compact ? '40px' : '62px',
+              width: compact ? '48px' : '64px',
+              height: compact ? '36px' : '48px',
               objectFit: 'cover',
-              border: '1px solid #444',
+              border: '1px solid #333',
               borderRadius: '2px'
             }}
           />
@@ -270,8 +269,8 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
         <div style={{ flex: 1, textAlign: 'center', padding: '0 2px' }}>
           <div style={{
             fontWeight: '900',
-            fontSize: compact ? '12px' : '18px',
-            letterSpacing: '0.6px',
+            fontSize: compact ? '11px' : '15px',
+            letterSpacing: '0.5px',
             textTransform: 'uppercase',
             lineHeight: '1.15',
             fontFamily: 'Arial, sans-serif'
@@ -281,7 +280,7 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
           
           <div style={{
             fontWeight: '600',
-            fontSize: compact ? '7px' : '10.5px',
+            fontSize: compact ? '6.5px' : '8.5px',
             color: '#111',
             marginTop: '1px',
             lineHeight: '1.2'
@@ -291,9 +290,9 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
 
           <div style={{
             fontWeight: '600',
-            fontSize: compact ? '6.5px' : '9.5px',
+            fontSize: compact ? '6px' : '8px',
             color: '#222',
-            marginTop: '1px',
+            marginTop: '0.5px',
             lineHeight: '1.2'
           }}>
             📞 7887299111, 9198343345
@@ -301,29 +300,28 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
 
           <div style={{
             fontWeight: '700',
-            fontSize: compact ? '6px' : '9px',
+            fontSize: compact ? '5.5px' : '7.5px',
             color: '#333',
-            marginTop: '1px',
-            letterSpacing: '0.2px'
+            marginTop: '0.5px',
           }}>
             Affiliation: EJ-6/18-19 &bull; UDISE: 09400405918 &bull; Acad. Year: {acadYear}
           </div>
 
           <div style={{
             fontWeight: '800',
-            fontSize: compact ? '8.5px' : '12px',
-            marginTop: compact ? '2px' : '4px',
+            fontSize: compact ? '7.5px' : '10px',
+            marginTop: '2px',
             textTransform: 'uppercase',
-            letterSpacing: '0.5px'
+            letterSpacing: '0.4px'
           }}>
             {schedule.exam_type} EXAMINATION ({acadYear})
           </div>
 
           <div style={{
             fontWeight: '900',
-            fontSize: compact ? '9px' : '13px',
+            fontSize: compact ? '8px' : '10.5px',
             textDecoration: 'underline',
-            letterSpacing: '1px',
+            letterSpacing: '0.8px',
             marginTop: '1px'
           }}>
             ADMIT CARD
@@ -337,8 +335,8 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
             alt="School Logo"
             onError={(e) => { e.target.src = '/logo.jpg'; }}
             style={{
-              width: compact ? '46px' : '72px',
-              height: compact ? '46px' : '72px',
+              width: compact ? '42px' : '56px',
+              height: compact ? '42px' : '56px',
               objectFit: 'contain',
               borderRadius: '50%'
             }}
@@ -350,16 +348,16 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: compact ? '6px' : '12px',
-        gap: '10px'
+        alignItems: 'center',
+        marginBottom: compact ? '4px' : '7px',
+        gap: '8px'
       }}>
-        <div style={{ flex: 1, lineHeight: compact ? '1.35' : '1.65' }}>
-          <div style={{ display: 'flex', gap: compact ? '12px' : '24px', marginBottom: '2px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, lineHeight: compact ? '1.3' : '1.5' }}>
+          <div style={{ display: 'flex', gap: compact ? '10px' : '20px', marginBottom: '1.5px', flexWrap: 'wrap' }}>
             <div><strong>Name</strong>&nbsp;&nbsp;:&nbsp;&nbsp;{student.name || '—'}</div>
             <div><strong>Class</strong>&nbsp;&nbsp;:&nbsp;&nbsp;{student.class_name || schedule.class_name || '—'}{student.section ? ` ${student.section}` : ''}</div>
           </div>
-          <div style={{ display: 'flex', gap: compact ? '12px' : '24px', marginBottom: '2px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: compact ? '10px' : '20px', marginBottom: '1.5px', flexWrap: 'wrap' }}>
             <div><strong>Father's Name</strong>&nbsp;&nbsp;:&nbsp;&nbsp;{student.father_name || '—'}</div>
             <div><strong>Roll No.</strong>&nbsp;&nbsp;:&nbsp;&nbsp;{student.adm_no || '—'}</div>
           </div>
@@ -368,41 +366,70 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
           </div>
         </div>
 
-        {/* Photo Box */}
-        <div style={{
-          width: compact ? '42px' : '66px',
-          height: compact ? '50px' : '78px',
-          border: '1px solid #444',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: '#fafafa',
-          fontSize: compact ? '7px' : '10px',
-          color: '#555',
-          fontWeight: '600',
-          textAlign: 'center'
-        }}>
-          Affix<br />Photo
+        {/* Student Photo Box (Prints actual student photo or Affix box) */}
+        <div 
+          onClick={onUploadPhotoClick}
+          className={onUploadPhotoClick ? "cursor-pointer group relative" : ""}
+          style={{
+            width: compact ? '36px' : '50px',
+            height: compact ? '44px' : '60px',
+            border: '1px solid #333',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            background: '#fafafa',
+            overflow: 'hidden'
+          }}
+          title={onUploadPhotoClick ? "Click to upload/change student photo" : ""}
+        >
+          {studentPhotoUrl ? (
+            <img 
+              src={studentPhotoUrl} 
+              alt={student.name}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
+            />
+          ) : (
+            <div style={{
+              fontSize: compact ? '6.5px' : '8.5px',
+              color: '#555',
+              fontWeight: '600',
+              textAlign: 'center',
+              lineHeight: '1.2'
+            }}>
+              Affix<br />Photo
+            </div>
+          )}
+
+          {/* Interactive upload indicator in preview mode */}
+          {onUploadPhotoClick && (
+            <div className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[9px] font-semibold text-center p-0.5">
+              📷 Upload
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── EXAM TIMETABLE TABLE ── */}
+      {/* ── EXAM TIMETABLE TABLE (Compact Height) ── */}
       <table style={{
         width: '100%',
         borderCollapse: 'collapse',
-        marginBottom: compact ? '6px' : '12px',
-        fontSize: compact ? '7.5px' : '11px',
+        marginBottom: compact ? '4px' : '7px',
+        fontSize: compact ? '7px' : '9px',
       }}>
         <thead>
           <tr style={{ background: '#f0f0f0' }}>
-            <th style={thStyle(compact, '30px')}>S.N</th>
-            <th style={thStyle(compact, '80px')}>Date</th>
+            <th style={thStyle(compact, '26px')}>S.N</th>
+            <th style={thStyle(compact, '72px')}>Date</th>
             <th style={{ ...thStyle(compact), textAlign: 'left' }}>Subject</th>
-            <th style={thStyle(compact, '70px')}>Start Time</th>
-            <th style={thStyle(compact, '70px')}>End Time</th>
-            <th style={thStyle(compact, '55px')}>Room No</th>
-            <th style={thStyle(compact, '65px')}>Inv. Sign</th>
+            <th style={thStyle(compact, '64px')}>Start Time</th>
+            <th style={thStyle(compact, '64px')}>End Time</th>
+            <th style={thStyle(compact, '50px')}>Room No</th>
+            <th style={thStyle(compact, '58px')}>Inv. Sign</th>
           </tr>
         </thead>
         <tbody>
@@ -424,17 +451,17 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
-        marginTop: compact ? '10px' : '22px',
-        marginBottom: compact ? '6px' : '10px',
+        marginTop: compact ? '6px' : '14px',
+        marginBottom: compact ? '4px' : '6px',
         fontWeight: '700',
-        fontSize: compact ? '8px' : '11.5px',
+        fontSize: compact ? '7.5px' : '9.5px',
       }}>
         <div>
-          <div style={{ borderTop: '1.2px solid #000', width: compact ? '85px' : '135px', marginBottom: '3px' }}></div>
+          <div style={{ borderTop: '1px solid #000', width: compact ? '75px' : '110px', marginBottom: '2px' }}></div>
           Sign. Class Teacher
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ borderTop: '1.2px solid #000', width: compact ? '85px' : '135px', marginBottom: '3px', marginLeft: 'auto' }}></div>
+          <div style={{ borderTop: '1px solid #000', width: compact ? '75px' : '110px', marginBottom: '2px', marginLeft: 'auto' }}></div>
           Sign. Principal
         </div>
       </div>
@@ -442,14 +469,14 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
       {/* ── FOOTER NOTES ── */}
       {(schedule.note_english || schedule.note_hindi) && (
         <div style={{
-          fontSize: compact ? '6.5px' : '9.5px',
+          fontSize: compact ? '6px' : '8px',
           color: '#222',
           borderTop: '1px solid #ccc',
-          paddingTop: compact ? '3px' : '6px',
-          lineHeight: '1.35',
+          paddingTop: compact ? '2px' : '4px',
+          lineHeight: '1.25',
         }}>
           {schedule.note_english && <div><strong>Note:</strong> {schedule.note_english}</div>}
-          {schedule.note_hindi && <div style={{ marginTop: '1.5px' }}><strong>नोट :</strong> {schedule.note_hindi}</div>}
+          {schedule.note_hindi && <div style={{ marginTop: '1px' }}><strong>नोट :</strong> {schedule.note_hindi}</div>}
         </div>
       )}
     </div>
@@ -458,17 +485,17 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
 
 const thStyle = (compact, width = 'auto') => ({
   border: '1px solid #000',
-  padding: compact ? '2px 4px' : '5px 7px',
+  padding: compact ? '1.5px 3px' : '3.5px 5px',
   fontWeight: '800',
   textAlign: 'center',
-  fontSize: compact ? '7px' : '10.5px',
+  fontSize: compact ? '6.5px' : '8.5px',
   width: width,
 });
 
 const tdStyle = (compact) => ({
   border: '1px solid #000',
-  padding: compact ? '2px 4px' : '4.5px 7px',
-  fontSize: compact ? '7.5px' : '10.5px',
+  padding: compact ? '1.5px 3px' : '3px 5px',
+  fontSize: compact ? '7px' : '9px',
 });
 
 
@@ -497,6 +524,9 @@ const AdmitCard = () => {
   const [selectedStudentIdx, setSelectedStudentIdx] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const fileInputRef = useRef(null);
 
   const showMsg = (text, type = 'success') => {
     setMessage({ text, type });
@@ -655,6 +685,51 @@ const AdmitCard = () => {
     }
   };
 
+  // ──── STUDENT PHOTO UPLOAD HANDLER ────
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const currentStudent = admitCardData?.students?.[selectedStudentIdx];
+    if (!currentStudent) return;
+
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    setUploadingPhoto(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/students/${currentStudent.adm_no}/photo`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Bypass-Tunnel-Reminder': 'true'
+        },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Photo upload failed');
+
+      // Update state immediately
+      setAdmitCardData(prev => {
+        if (!prev) return prev;
+        const updatedStudents = [...prev.students];
+        updatedStudents[selectedStudentIdx] = {
+          ...updatedStudents[selectedStudentIdx],
+          photo_url: data.data.photo_url
+        };
+        return { ...prev, students: updatedStudents };
+      });
+
+      showMsg(`Photo uploaded for ${currentStudent.name}!`, 'success');
+    } catch (err) {
+      showMsg(err.message || 'Failed to upload photo', 'error');
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handlePrintSingle = () => {
     const currentStudent = admitCardData?.students?.[selectedStudentIdx];
     const studentName = currentStudent ? currentStudent.name : 'Student';
@@ -674,7 +749,7 @@ const AdmitCard = () => {
   const tabs = [
     { id: 'create', label: '📝 1. Create Exam Schedule', icon: Calendar },
     { id: 'preview', label: '👁️ 2. Preview & Print Single', icon: Eye },
-    { id: 'bulk', label: '🖨️ 3. Bulk Print (Class-wise)', icon: Users },
+    { id: 'bulk', label: '🖨️ 3. Bulk Print (2 per A4)', icon: Users },
   ];
 
   return (
@@ -684,6 +759,15 @@ const AdmitCard = () => {
           <option key={idx} value={s} />
         ))}
       </datalist>
+
+      {/* Hidden File Input for Quick Student Photo Upload */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handlePhotoUpload} 
+        accept="image/*" 
+        className="hidden" 
+      />
 
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -695,7 +779,7 @@ const AdmitCard = () => {
             Admit Card Generator
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Configure exam dates & subjects class-wise, then preview or batch-print admit cards with official school letterhead.
+            Generate official admit cards with student photo & school letterhead (Half-A4 / 2 cards per A4 page).
           </p>
         </div>
       </div>
@@ -732,7 +816,6 @@ const AdmitCard = () => {
       {/* ═══════════════ TAB 1: CREATE / EDIT SCHEDULE ═══════════════ */}
       {activeTab === 'create' && (
         <div className="space-y-6">
-          {/* Form Top Panel */}
           <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
             <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wider mb-4 flex items-center gap-2">
               <Calendar size={16} className="text-indigo-600" />
@@ -791,7 +874,7 @@ const AdmitCard = () => {
                   Step 2: Exam Timetable & Subjects ({formClass || 'Select Class'})
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Set exam date and time for each subject. Add, remove, or rename subjects as needed.
+                  Set exam date and time for each subject. Cards strictly fit half of A4.
                 </p>
               </div>
 
@@ -800,7 +883,6 @@ const AdmitCard = () => {
                   type="button"
                   onClick={() => loadDefaultSubjectsForClass(formClass)} 
                   className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border border-indigo-200 cursor-pointer"
-                  title="Reset subjects to default recommendations for this class"
                 >
                   <Sparkles size={13} />
                   Reset to {formClass || 'Class'} Subjects
@@ -882,7 +964,6 @@ const AdmitCard = () => {
                           type="button"
                           onClick={() => removeSubjectRow(i)} 
                           className="text-gray-400 hover:text-rose-600 transition-colors p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
-                          title="Remove this subject row"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -894,7 +975,7 @@ const AdmitCard = () => {
             </div>
           </div>
 
-          {/* Footer Notes (English & Hindi) */}
+          {/* Footer Notes */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
             <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">
               Step 3: Footer Notes & Announcements (Printed on Admit Cards)
@@ -923,7 +1004,6 @@ const AdmitCard = () => {
             </div>
           </div>
 
-          {/* Save Action Bar */}
           <div className="flex justify-end pt-2">
             <button 
               type="button"
@@ -936,7 +1016,7 @@ const AdmitCard = () => {
             </button>
           </div>
 
-          {/* Existing Saved Schedules Section */}
+          {/* Existing Saved Schedules */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mt-8">
             <div className="p-5 border-b border-gray-100 bg-gray-50/70 flex justify-between items-center">
               <h3 className="font-bold text-gray-900 text-sm">
@@ -1027,7 +1107,10 @@ const AdmitCard = () => {
                         }`}
                       >
                         <div className="flex justify-between items-center">
-                          <span className="truncate">{student.name}</span>
+                          <span className="truncate flex items-center gap-1.5">
+                            {student.photo_url && <span className="text-emerald-600 text-xs font-bold">●</span>}
+                            {student.name}
+                          </span>
                           <span className="text-xs text-gray-400 font-mono">Adm: {student.adm_no}</span>
                         </div>
                         {student.father_name && (
@@ -1064,20 +1147,34 @@ const AdmitCard = () => {
                     </button>
                   </div>
 
-                  <button 
-                    type="button"
-                    onClick={handlePrintSingle} 
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer"
-                  >
-                    <Printer size={16} />
-                    Print Single Admit Card
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border border-gray-300 cursor-pointer"
+                      title="Upload or change student photo"
+                    >
+                      <Camera size={15} />
+                      {uploadingPhoto ? 'Uploading...' : 'Upload Student Photo'}
+                    </button>
+
+                    <button 
+                      type="button"
+                      onClick={handlePrintSingle} 
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer"
+                    >
+                      <Printer size={16} />
+                      Print Single (Half A4)
+                    </button>
+                  </div>
                 </div>
 
-                <div id="print-area-single" className="print-area bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                <div id="print-area-single" className="print-area bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
                   <AdmitCardTemplate
                     student={admitCardData.students[selectedStudentIdx]}
                     schedule={admitCardData.schedule}
+                    onUploadPhotoClick={() => fileInputRef.current?.click()}
                   />
                 </div>
               </div>
@@ -1101,7 +1198,7 @@ const AdmitCard = () => {
         </div>
       )}
 
-      {/* ═══════════════ TAB 3: BULK PRINT (CLASS-WISE) ═══════════════ */}
+      {/* ═══════════════ TAB 3: BULK PRINT (2 CARDS PER A4 PAGE) ═══════════════ */}
       {activeTab === 'bulk' && (
         <div className="space-y-6">
           <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 flex flex-wrap gap-4 items-end justify-between">
@@ -1131,7 +1228,7 @@ const AdmitCard = () => {
                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer"
               >
                 <Printer size={18} />
-                Print All ({admitCardData.total_students} Cards)
+                Print All ({admitCardData.total_students} Cards &bull; 2 per A4)
               </button>
             )}
           </div>
@@ -1139,7 +1236,7 @@ const AdmitCard = () => {
           {generating && (
             <div className="text-center py-16 text-gray-500 bg-white rounded-2xl border border-gray-200 shadow-sm">
               <div className="animate-spin inline-block w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full mb-3"></div>
-              <p className="font-semibold text-sm">Formatting bulk admit cards for A4 paper print...</p>
+              <p className="font-semibold text-sm">Formatting bulk admit cards (2 cards per A4 sheet)...</p>
             </div>
           )}
 
@@ -1150,7 +1247,9 @@ const AdmitCard = () => {
                   <CheckCircle size={18} className="text-emerald-600" />
                   Ready to print {admitCardData.total_students} admit cards for {admitCardData.schedule.class_name} ({admitCardData.schedule.exam_type})
                 </div>
-                <span className="text-xs text-emerald-700 font-normal">Arranged 2 cards per page (A4 layout)</span>
+                <span className="text-xs text-emerald-700 font-bold bg-emerald-100/70 px-2.5 py-1 rounded-lg">
+                  Strictly 2 cards per A4 page ({Math.ceil(admitCardData.total_students / 2)} sheets total)
+                </span>
               </div>
 
               <div id="print-area-bulk" className="print-area">
@@ -1172,7 +1271,7 @@ const AdmitCard = () => {
             <div className="text-center py-20 text-gray-400 bg-white rounded-2xl border border-gray-200 shadow-sm">
               <Printer size={48} className="mx-auto mb-3 opacity-30 text-gray-500" />
               <p className="text-base font-bold text-gray-700">Select an exam schedule above to generate all admit cards.</p>
-              <p className="text-xs text-gray-400 mt-1">Cards will be automatically paginated (2 cards per A4 page).</p>
+              <p className="text-xs text-gray-400 mt-1">Cards are strictly sized to half an A4 sheet (2 students per page).</p>
             </div>
           )}
         </div>

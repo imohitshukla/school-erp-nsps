@@ -545,3 +545,39 @@ exports.updateStudentFees = async (req, res) => {
   }
 };
 
+
+exports.uploadStudentPhoto = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No photo file uploaded' });
+  }
+
+  const { admNo } = req.params;
+  const photoUrl = '/uploads/students/' + req.file.filename;
+
+  try {
+    await db.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='photo_url') THEN
+          ALTER TABLE students ADD COLUMN photo_url VARCHAR(500);
+        END IF;
+      END $$;
+    `);
+
+    const result = await db.query(
+      'UPDATE students SET photo_url = $1 WHERE adm_no = $2 AND school_id = $3 RETURNING id, adm_no, name, photo_url',
+      [photoUrl, admNo, req.user.school_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    res.status(200).json({
+      message: 'Photo uploaded successfully',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error uploading student photo:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
