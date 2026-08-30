@@ -652,10 +652,19 @@ exports.getClassStudentPhotos = async (req, res) => {
   try {
     const { className } = req.params;
     const result = await db.query(
-      'SELECT id, adm_no, name, COALESCE(father_name, '') as father_name, class_name, COALESCE(section, '') as section, photo_url FROM students WHERE class_name = $1 AND school_id = $2 ORDER BY name ASC',
+      `SELECT * FROM students WHERE class_name = $1 AND school_id = $2 ORDER BY name ASC`,
       [className, req.user.school_id]
     );
-    res.status(200).json({ data: result.rows });
+    const students = result.rows.map(s => ({
+      id: s.id,
+      adm_no: s.adm_no,
+      name: s.name,
+      father_name: s.father_name || s.father || s.parent_name || '',
+      class_name: s.class_name,
+      section: s.section || '',
+      photo_url: s.photo_url || s.photo || ''
+    }));
+    res.status(200).json({ data: students });
   } catch (error) {
     console.error('Error fetching class photos:', error);
     res.status(500).json({ error: 'Internal server error' });
