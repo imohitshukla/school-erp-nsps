@@ -253,7 +253,7 @@ const AdmitCardTemplate = ({ student, schedule, compact = false }) => {
         {/* TOP LEFT: School Building Photo */}
         <div style={{ flexShrink: 0, textAlign: 'center' }}>
           <img 
-            src="/building.jpeg" 
+            src="/new_building.jpg" 
             alt="School Building"
             onError={(e) => { e.target.src = '/new_building.jpg'; }}
             style={{

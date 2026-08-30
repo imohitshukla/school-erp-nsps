@@ -152,7 +152,7 @@ const ReceiptPrint = ({ receiptData }) => {
         {/* === HEADER === */}
         <div className="rp-header">
           <img
-            src="/logo.png"
+            src="/new_logo.jpg"
             alt="School Logo"
             className="rp-logo"
             onError={e => { e.target.style.display = 'none'; }}
@@ -165,7 +165,7 @@ const ReceiptPrint = ({ receiptData }) => {
             <p className="rp-school-sub">State Board of Uttar Pradesh &nbsp;|&nbsp; Academic Year: 2026-2027</p>
           </div>
           <img
-            src="/building.jpeg"
+            src="/new_building.jpg"
             alt="School Building"
             className="rp-building"
             onError={e => { e.target.style.display = 'none'; }}
