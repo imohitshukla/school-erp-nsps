@@ -581,3 +581,83 @@ exports.uploadStudentPhoto = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+exports.bulkUploadPhotos = async (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: 'No photo files uploaded' });
+  }
+
+  try {
+    await db.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='photo_url') THEN
+          ALTER TABLE students ADD COLUMN photo_url VARCHAR(500);
+        END IF;
+      END $$;
+    `);
+
+    const results = {
+      total: req.files.length,
+      matched: [],
+      unmatched: []
+    };
+
+    for (const file of req.files) {
+      const originalName = file.originalname;
+      const ext = path.extname(originalName);
+      let admNoCandidate = path.basename(originalName, ext).trim();
+      admNoCandidate = admNoCandidate.replace(/^(adm|student|reg|roll)[_\s-]*/i, '');
+
+      const matchRes = await db.query(
+        'SELECT id, adm_no, name, class_name FROM students WHERE (LOWER(adm_no) = LOWER($1) OR adm_no = $1) AND school_id = $2 LIMIT 1',
+        [admNoCandidate, req.user.school_id]
+      );
+
+      if (matchRes.rows.length > 0) {
+        const student = matchRes.rows[0];
+        const photoUrl = '/uploads/students/' + file.filename;
+        
+        await db.query(
+          'UPDATE students SET photo_url = $1 WHERE id = $2 AND school_id = $3',
+          [photoUrl, student.id, req.user.school_id]
+        );
+
+        results.matched.push({
+          file: originalName,
+          adm_no: student.adm_no,
+          name: student.name,
+          class_name: student.class_name,
+          photo_url: photoUrl
+        });
+      } else {
+        results.unmatched.push({
+          file: originalName,
+          parsed_adm_no: admNoCandidate,
+          reason: 'No student found with Registration/Adm No "' + admNoCandidate + '"'
+        });
+      }
+    }
+
+    res.status(200).json({
+      message: 'Processed ' + results.total + ' photos: ' + results.matched.length + ' updated, ' + results.unmatched.length + ' unmatched.',
+      data: results
+    });
+  } catch (error) {
+    console.error('Error during bulk photo upload:', error);
+    res.status(500).json({ error: 'Internal server error during bulk photo upload' });
+  }
+};
+
+exports.getClassStudentPhotos = async (req, res) => {
+  try {
+    const { className } = req.params;
+    const result = await db.query(
+      'SELECT id, adm_no, name, COALESCE(father_name, '') as father_name, class_name, COALESCE(section, '') as section, photo_url FROM students WHERE class_name = $1 AND school_id = $2 ORDER BY name ASC',
+      [className, req.user.school_id]
+    );
+    res.status(200).json({ data: result.rows });
+  } catch (error) {
+    console.error('Error fetching class photos:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

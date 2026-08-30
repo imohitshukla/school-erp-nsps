@@ -65,6 +65,35 @@ router.get('/class/:className', studentController.getStudentsByClass);
 router.get('/search', studentController.searchStudents);
 router.get('/adm/:admNo', studentController.getStudentByAdmNo);
 router.put('/:admNo/fees', studentController.updateStudentFees);
+
+const bulkPhotoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../../../uploads/students');
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    const baseName = path.basename(file.originalname, ext);
+    const safeName = baseName.replace(/[^a-zA-Z0-9_-]/g, '');
+    cb(null, safeName + '_' + Date.now() + '_' + Math.round(Math.random() * 1000) + ext);
+  }
+});
+
+const uploadBulkPhotos = multer({
+  storage: bulkPhotoStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+router.post('/bulk-photos', uploadBulkPhotos.array('photos', 500), studentController.bulkUploadPhotos);
+router.get('/class/:className/photos', studentController.getClassStudentPhotos);
 router.post('/:admNo/photo', uploadPhoto.single('photo'), studentController.uploadStudentPhoto);
 
 module.exports = router;
